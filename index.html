@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Greender Trainer</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <section id="screen-login" class="screen">
+      <div class="card">
+        <h1>Greender Trainer</h1>
+        <p class="subtitle">Welcome! Enter your password to start training:</p>
+        <input id="password-input" type="password" placeholder="Password" autocomplete="off" />
+        <p id="login-error" class="error hidden">Incorrect password!</p>
+        <button id="login-btn" class="btn btn-primary" type="button">Войти</button>
+      </div>
+    </section>
+
+    <section id="screen-menu" class="screen hidden">
+      <div class="card">
+        <h1>Main Menu</h1>
+        <button id="btn-trainer" class="btn btn-primary" type="button">Тренажер side потов</button>
+        <button id="btn-tests" class="btn btn-primary" type="button">Тесты</button>
+        <button id="btn-exam" class="btn btn-disabled" type="button" disabled>Экзамен</button>
+        <button id="btn-learn" class="btn btn-disabled" type="button" disabled>Обучение</button>
+      </div>
+      <button id="btn-support" class="btn btn-link" type="button">💬 Поддержка</button>
+    </section>
+
+    <section id="screen-trainer-menu" class="screen hidden">
+      <div class="card">
+        <button id="btn-trainer-back" class="btn btn-ghost" type="button">Назад</button>
+        <h1>Режим тренажера</h1>
+        <p class="subtitle">Выберите формат тренировки сайд-потов</p>
+        <button id="btn-mode-timed" class="btn btn-primary btn-mode" type="button">На время (15 сек)</button>
+        <button id="btn-mode-untimed" class="btn btn-primary btn-mode" type="button">Без времени</button>
+      </div>
+    </section>
+
+    <section id="screen-trainer" class="screen hidden">
+      <div class="card trainer-card">
+        <div class="trainer-top">
+          <button id="btn-trainer-to-menu" class="btn btn-ghost" type="button">Назад в меню</button>
+          <div id="lives" class="lives" aria-label="Жизни">
+            <span class="heart">❤️</span><span class="heart">❤️</span>
+          </div>
+        </div>
+        <div id="timer" class="timer hidden">
+          <div class="timer-track">
+            <div class="timer-bar"></div>
+          </div>
+          <span class="timer-value">15</span>
+        </div>
+        <p id="question-meta" class="meta">Вопрос 1</p>
+        <div id="task-text" class="task"></div>
+        <p id="question-text" class="question"></p>
+        <input id="answer-input" type="number" inputmode="numeric" placeholder="Введите сумму" />
+        <p id="feedback" class="feedback hidden"></p>
+        <button id="btn-check" class="btn btn-primary" type="button">Проверить</button>
+        <button id="btn-next" class="btn btn-primary hidden" type="button">Следующий</button>
+        <div id="game-over" class="game-over hidden">
+          <h2>Game Over</h2>
+          <p id="final-score"></p>
+          <button id="btn-over-menu" class="btn btn-primary" type="button">В главное меню</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-tests" class="screen hidden">
+      <div class="card">
+        <button id="btn-tests-back" class="btn btn-ghost" type="button">Назад в меню</button>
+        <div id="test-progress-wrap">
+          <p id="test-progress-label" class="meta">Вопрос 1 из 5</p>
+          <div class="progress-bar">
+            <div id="test-progress-fill" class="progress-fill"></div>
+          </div>
+        </div>
+        <div id="test-quiz">
+          <p id="test-question" class="question"></p>
+          <div id="test-options" class="options"></div>
+          <p id="test-feedback" class="feedback hidden"></p>
+        </div>
+        <div id="test-result" class="game-over hidden">
+          <h2>Результат</h2>
+          <p id="test-score"></p>
+          <button id="btn-test-retry" class="btn btn-primary" type="button">Пройти ещё раз</button>
+          <button id="btn-test-menu" class="btn btn-ghost" type="button">В главное меню</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
