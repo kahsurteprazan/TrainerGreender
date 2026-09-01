@@ -57,6 +57,30 @@ body {
   padding-bottom: 76px;
 }
 
+.menu-footer {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.menu-footer .btn {
+  flex: 1;
+}
+
+.btn-secondary {
+  background: rgba(51, 65, 85, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.btn-secondary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
 .card {
   background: rgba(30, 41, 59, 0.7);
   backdrop-filter: blur(12px);

@@ -1,6 +1,5 @@
 (function () {
   const PASSWORD = "dealer2026";
-  const MAX_STACK = 20000;
   const TIME_LIMIT = 15;
 
   const tg = window.Telegram && window.Telegram.WebApp;
@@ -14,7 +13,9 @@
   const screens = {
     login: document.getElementById("screen-login"),
     menu: document.getElementById("screen-menu"),
+    exam: document.getElementById("screen-exam"),
     trainerMenu: document.getElementById("screen-trainer-menu"),
+    difficulty: document.getElementById("screen-difficulty"),
     trainer: document.getElementById("screen-trainer"),
     tests: document.getElementById("screen-tests"),
   };
@@ -48,6 +49,7 @@
   const testProgressWrap = document.getElementById("test-progress-wrap");
 
   let timedMode = false;
+  let difficulty = null;
   let lives = 2;
   let questionNumber = 1;
   let solvedCount = 0;
@@ -61,6 +63,8 @@
   let testIndex = 0;
   let testScore = 0;
   let testLocked = false;
+  let currentPotIndex = 0;
+  let correctAnswers = [];
 
   function replayClass(el, className) {
     el.classList.remove(className);
@@ -101,9 +105,9 @@
     });
   }
 
-  function resetGame() {
+  function resetGameState() {
     stopPending();
-    timedMode = false;
+    difficulty = null;
     lives = 2;
     questionNumber = 1;
     solvedCount = 0;
@@ -111,6 +115,8 @@
     answered = false;
     gameOver = false;
     timeLeft = TIME_LIMIT;
+    currentPotIndex = 0;
+    correctAnswers = [];
 
     answerInput.value = "";
     answerInput.disabled = false;
@@ -142,6 +148,11 @@
     testProgressFill.style.width = "20%";
   }
 
+  function resetGame() {
+    timedMode = false;
+    resetGameState();
+  }
+
   function goToMenu() {
     resetGame();
     showScreen("menu");
@@ -171,20 +182,47 @@
     showScreen("trainerMenu");
   });
   document.getElementById("btn-tests").addEventListener("click", startTests);
+  document.getElementById("btn-exam").addEventListener("click", () => {
+    resetGame();
+    showScreen("exam");
+  });
+  document.getElementById("btn-exam-back").addEventListener("click", goToMenu);
+  document.getElementById("btn-exam-close").addEventListener("click", goToMenu);
   document.getElementById("btn-trainer-back").addEventListener("click", goToMenu);
+  document.getElementById("btn-difficulty-back").addEventListener("click", () => {
+    resetGame();
+    showScreen("trainerMenu");
+  });
   document.getElementById("btn-trainer-to-menu").addEventListener("click", goToMenu);
   document.getElementById("btn-over-menu").addEventListener("click", goToMenu);
   document.getElementById("btn-tests-back").addEventListener("click", goToMenu);
   document.getElementById("btn-test-menu").addEventListener("click", goToMenu);
   document.getElementById("btn-test-retry").addEventListener("click", startTests);
+  
+  document.getElementById("btn-ideas").addEventListener("click", () => {
+    const url = "https://docs.google.com/forms/d/e/1FAIpQLSd6r4HMWTiG2k4y9FEwqVBiSYbvA91wLoQabk5uFHffhyDS_A/viewform?usp=header";
+    window.open(url, "_blank");
+  });
+  
   document.getElementById("btn-support").addEventListener("click", () => {
     const url = "https://t.me/nazar_petr";
     if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
     else window.open(url, "_blank");
   });
 
-  document.getElementById("btn-mode-timed").addEventListener("click", () => startTrainer(true));
-  document.getElementById("btn-mode-untimed").addEventListener("click", () => startTrainer(false));
+  document.getElementById("btn-mode-timed").addEventListener("click", () => {
+    timedMode = true;
+    showScreen("difficulty");
+  });
+  document.getElementById("btn-mode-untimed").addEventListener("click", () => {
+    timedMode = false;
+    showScreen("difficulty");
+  });
+  
+  document.getElementById("btn-easy").addEventListener("click", () => startTrainer("easy"));
+  document.getElementById("btn-medium").addEventListener("click", () => startTrainer("medium"));
+  document.getElementById("btn-hard").addEventListener("click", () => startTrainer("hard"));
+  
   document.getElementById("btn-check").addEventListener("click", checkAnswer);
   document.getElementById("btn-next").addEventListener("click", () => nextQuestion(false));
   document.getElementById("answer-input").addEventListener("keydown", (e) => {
@@ -213,7 +251,7 @@
   }
 
   function formatMoney(n) {
-    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return n.toString();
   }
 
   function calculatePots(bets) {
@@ -230,27 +268,27 @@
   }
 
   function generateEasyBets() {
-    const small = randMultiple(100, 4000);
-    const big = randMultiple(small + 100, Math.min(MAX_STACK, small + 8000));
+    const small = randMultiple(100, 1000);
+    const big = randMultiple(small + 100, Math.min(2000, small + 1500));
     return shuffle([big, big, small]);
   }
 
   function generateMediumBets() {
     const n = randInt(4, 7);
     const small = randMultiple(100, 5000);
-    const big = randMultiple(small + 100, Math.min(MAX_STACK, small + 10000));
+    const big = randMultiple(Math.max(small + 100, 10000), Math.min(30000, 15000));
     const bets = [small];
     for (let i = 1; i < n; i++) bets.push(big);
     return shuffle(bets);
   }
 
   function generateHardBets() {
-    const nLevels = Math.random() < 0.45 ? 4 : 3;
+    const nLevels = randInt(2, 4);
     const levels = [];
-    let current = randMultiple(100, 2500);
+    let current = randMultiple(15000, 25000);
     levels.push(current);
     for (let i = 1; i < nLevels; i++) {
-      current = randMultiple(current + 100, Math.min(MAX_STACK, current + 4500));
+      current = randMultiple(current + 1000, Math.min(100000, current + 30000));
       levels.push(current);
     }
 
@@ -275,42 +313,48 @@
   }
 
   function buildQuestion() {
-    const level = questionNumber;
     let bets;
-    let ask;
+    let pots;
+    let questions = [];
 
-    if (level <= 5) {
+    if (difficulty === "easy") {
       bets = generateEasyBets();
-      ask = "main";
-    } else if (level <= 10) {
+      pots = calculatePots(bets);
+      questions.push({
+        prompt: "Введите размер Основного банка (Main Pot):",
+        answer: pots.main,
+      });
+    } else if (difficulty === "medium") {
       bets = generateMediumBets();
-      ask = Math.random() < 0.5 ? "main" : "side1";
-    } else {
-      bets = generateHardBets();
-      ask = Math.random() < 0.5 ? "side1" : "side2";
-    }
-
-    const pots = calculatePots(bets);
-    let prompt;
-    let answer;
-
-    if (ask === "main") {
-      prompt = "Каков размер ОСНОВНОГО банка (Main Pot)?";
-      answer = pots.main;
-    } else if (ask === "side1") {
-      prompt = "Каков размер Сайд-пота (Side Pot 1)?";
-      answer = pots.sides[0] || 0;
-    } else {
-      prompt = "Сколько составляет Второй сайд-пот (Side Pot 2)?";
-      if (pots.sides.length < 2) {
-        prompt = "Размер Side Pot 1?";
-        answer = pots.sides[0] || 0;
+      pots = calculatePots(bets);
+      const askMain = Math.random() < 0.5;
+      if (askMain) {
+        questions.push({
+          prompt: "Введите размер Основного банка (Main Pot):",
+          answer: pots.main,
+        });
       } else {
-        answer = pots.sides[1];
+        questions.push({
+          prompt: "Введите размер Первого Сайд-пота (Side Pot 1):",
+          answer: pots.sides[0] || 0,
+        });
+      }
+    } else if (difficulty === "hard") {
+      bets = generateHardBets();
+      pots = calculatePots(bets);
+      questions.push({
+        prompt: "Введите размер Основного банка (Main Pot):",
+        answer: pots.main,
+      });
+      for (let i = 0; i < pots.sides.length; i++) {
+        questions.push({
+          prompt: `Введите размер Сайд-пота ${i + 1}:`,
+          answer: pots.sides[i],
+        });
       }
     }
 
-    return { bets, pots, prompt, answer, level };
+    return { bets, pots, questions, level: questionNumber };
   }
 
   function startTimer() {
@@ -345,23 +389,31 @@
     gameOverEl.classList.add("hidden");
   }
 
-  function startTrainer(timed) {
-    resetGame();
-    timedMode = timed;
+  function startTrainer(selectedDifficulty) {
+    resetGameState();
+    difficulty = selectedDifficulty;
     showScreen("trainer");
     nextQuestion(true);
+  }
+
+  function updateQuestionPrompt() {
+    const question = currentTask.questions[currentPotIndex];
+    questionTextEl.textContent = question.prompt;
   }
 
   function nextQuestion(isStart) {
     if (gameOver) return;
     if (isStart !== true) {
       questionNumber += 1;
+      currentPotIndex = 0;
     }
     currentTask = buildQuestion();
+    correctAnswers = currentTask.questions.map((q) => q.answer);
+    currentPotIndex = 0;
     setPlayingUi();
     questionMetaEl.textContent = `Вопрос ${questionNumber}`;
     taskTextEl.textContent = describeBets(currentTask.bets);
-    questionTextEl.textContent = currentTask.prompt;
+    updateQuestionPrompt();
     startTimer();
     answerInput.focus();
   }
@@ -397,9 +449,8 @@
     answered = true;
     replayClass(answerInput, "flash-bad");
     replayClass(answerInput, "shake");
-    const stillAlive = applyError(
-      `Время вышло! Правильный ответ: ${formatMoney(currentTask.answer)}`
-    );
+    const expectedAnswer = currentTask.questions[currentPotIndex].answer;
+    const stillAlive = applyError(`Время вышло! Правильный ответ: ${formatMoney(expectedAnswer)}`);
     answerInput.disabled = true;
     btnCheck.classList.add("hidden");
     if (stillAlive) {
@@ -419,18 +470,46 @@
     answerInput.disabled = true;
     btnCheck.classList.add("hidden");
 
-    if (value === currentTask.answer) {
-      solvedCount += 1;
-      replayClass(answerInput, "flash-ok");
-      feedbackEl.classList.remove("hidden", "bad");
-      feedbackEl.classList.add("ok");
-      feedbackEl.textContent = "Верно!";
-      btnNext.classList.remove("hidden");
+    const expectedAnswer = currentTask.questions[currentPotIndex].answer;
+
+    if (value === expectedAnswer) {
+      currentPotIndex += 1;
+      if (currentPotIndex >= currentTask.questions.length) {
+        solvedCount += 1;
+        replayClass(answerInput, "flash-ok");
+        feedbackEl.classList.remove("hidden", "bad");
+        feedbackEl.classList.add("ok");
+        feedbackEl.textContent = "Верно! Все потов посчитаны.";
+        btnNext.classList.remove("hidden");
+      } else {
+        replayClass(answerInput, "flash-ok");
+        feedbackEl.classList.remove("hidden", "bad");
+        feedbackEl.classList.add("ok");
+        feedbackEl.textContent = "Верно! Следующий пот:";
+        answered = false;
+        answerInput.disabled = false;
+        answerInput.value = "";
+        answerInput.classList.remove("flash-ok", "flash-bad");
+        feedbackEl.classList.add("hidden");
+        btnCheck.classList.remove("hidden");
+        updateQuestionPrompt();
+        startTimer();
+        answerInput.focus();
+      }
     } else {
       replayClass(answerInput, "flash-bad");
       replayClass(answerInput, "shake");
-      const stillAlive = applyError(`Неверно. Правильный ответ: ${formatMoney(currentTask.answer)}`);
-      if (stillAlive) btnNext.classList.remove("hidden");
+      const stillAlive = applyError("Неверно!");
+      if (stillAlive) {
+        answered = false;
+        answerInput.disabled = false;
+        answerInput.value = "";
+        answerInput.classList.remove("flash-bad", "shake");
+        feedbackEl.classList.add("hidden");
+        btnCheck.classList.remove("hidden");
+        startTimer();
+        answerInput.focus();
+      }
     }
   }
 

@@ -12,7 +12,7 @@
     <section id="screen-login" class="screen">
       <div class="card">
         <h1>Greender Trainer</h1>
-        <p class="subtitle">Здравствуйте! Впишите пароль для тренеровки(пароль можно узнать у админа):</p>
+        <p class="subtitle">Welcome! Enter your password to start training:</p>
         <input id="password-input" type="password" placeholder="Password" autocomplete="off" />
         <p id="login-error" class="error hidden">Incorrect password!</p>
         <button id="login-btn" class="btn btn-primary" type="button">Войти</button>
@@ -24,10 +24,22 @@
         <h1>Main Menu</h1>
         <button id="btn-trainer" class="btn btn-primary" type="button">Тренажер side потов</button>
         <button id="btn-tests" class="btn btn-primary" type="button">Тесты</button>
-        <button id="btn-exam" class="btn btn-disabled" type="button" disabled>Экзамен</button>
+        <button id="btn-exam" class="btn btn-primary" type="button">Экзамен</button>
         <button id="btn-learn" class="btn btn-disabled" type="button" disabled>Обучение</button>
+        <div class="menu-footer">
+          <button id="btn-ideas" class="btn btn-secondary" type="button">💡 Идеи и предложения</button>
+          <button id="btn-support" class="btn btn-secondary" type="button">💬 Поддержка</button>
+        </div>
       </div>
-      <button id="btn-support" class="btn btn-link" type="button">💬 Поддержка</button>
+    </section>
+
+    <section id="screen-exam" class="screen hidden">
+      <div class="card">
+        <button id="btn-exam-back" class="btn btn-ghost" type="button">Назад</button>
+        <h2>Экзамен</h2>
+        <p class="subtitle">Экзамен в разработке. Здесь будет жесткий тест на время, объединяющий все уровни сложности без права на ошибку.</p>
+        <button id="btn-exam-close" class="btn btn-primary" type="button">Назад</button>
+      </div>
     </section>
 
     <section id="screen-trainer-menu" class="screen hidden">
@@ -37,6 +49,17 @@
         <p class="subtitle">Выберите формат тренировки сайд-потов</p>
         <button id="btn-mode-timed" class="btn btn-primary btn-mode" type="button">На время (15 сек)</button>
         <button id="btn-mode-untimed" class="btn btn-primary btn-mode" type="button">Без времени</button>
+      </div>
+    </section>
+
+    <section id="screen-difficulty" class="screen hidden">
+      <div class="card">
+        <button id="btn-difficulty-back" class="btn btn-ghost" type="button">Назад</button>
+        <h1>Выбор сложности</h1>
+        <p class="subtitle">Выберите уровень сложности</p>
+        <button id="btn-easy" class="btn btn-primary" type="button">Легкий уровень</button>
+        <button id="btn-medium" class="btn btn-primary" type="button">Средний уровень</button>
+        <button id="btn-hard" class="btn btn-primary" type="button">Сложный уровень</button>
       </div>
     </section>
 
