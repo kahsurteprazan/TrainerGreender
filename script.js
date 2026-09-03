@@ -17,6 +17,8 @@
     trainerMenu: document.getElementById("screen-trainer-menu"),
     difficulty: document.getElementById("screen-difficulty"),
     trainer: document.getElementById("screen-trainer"),
+    winnerMenu: document.getElementById("screen-winner-menu"),
+    winnerGame: document.getElementById("screen-winner-game"),
     tests: document.getElementById("screen-tests"),
   };
 
@@ -47,6 +49,14 @@
   const testProgressLabel = document.getElementById("test-progress-label");
   const testProgressFill = document.getElementById("test-progress-fill");
   const testProgressWrap = document.getElementById("test-progress-wrap");
+  const winnerLivesEl = document.getElementById("winner-lives");
+  const winnerTimerEl = document.getElementById("winner-timer");
+  const winnerBoardEl = document.getElementById("winner-board");
+  const winnerPlayersEl = document.getElementById("winner-players");
+  const winnerRoundEl = document.getElementById("winner-round");
+  const winnerFeedbackEl = document.getElementById("winner-feedback");
+  const winnerGameOverEl = document.getElementById("winner-game-over");
+  const winnerFinalScoreEl = document.getElementById("winner-final-score");
 
   let timedMode = false;
   let difficulty = null;
@@ -65,6 +75,16 @@
   let testLocked = false;
   let currentPotIndex = 0;
   let correctAnswers = [];
+  let winnerTimedMode = false;
+  let winnerLives = 2;
+  let winnerRound = 1;
+  let winnerDeal = null;
+  let winnerSelected = new Set();
+  let winnerAnswered = false;
+  let winnerGameOver = false;
+  let winnerTimerId = null;
+  let winnerAutoNextId = null;
+  let winnerTimeLeft = 5;
 
   function replayClass(el, className) {
     el.classList.remove(className);
@@ -89,6 +109,11 @@
     if (testAdvanceId) {
       clearTimeout(testAdvanceId);
       testAdvanceId = null;
+    }
+    stopWinnerTimer();
+    if (winnerAutoNextId) {
+      clearTimeout(winnerAutoNextId);
+      winnerAutoNextId = null;
     }
   }
 
@@ -153,8 +178,56 @@
     resetGameState();
   }
 
+  function stopWinnerTimer() {
+    if (winnerTimerId) {
+      clearInterval(winnerTimerId);
+      winnerTimerId = null;
+    }
+    if (winnerTimerEl) winnerTimerEl.classList.remove("running");
+  }
+
+  function renderWinnerLives() {
+    const hearts = winnerLivesEl.querySelectorAll(".heart");
+    hearts.forEach((heart, i) => {
+      if (i < winnerLives) {
+        heart.textContent = "❤️";
+        heart.classList.remove("lost");
+      } else {
+        heart.textContent = "💔";
+        heart.classList.add("lost");
+      }
+    });
+  }
+
+  function resetWinnerGame() {
+    stopWinnerTimer();
+    if (winnerAutoNextId) {
+      clearTimeout(winnerAutoNextId);
+      winnerAutoNextId = null;
+    }
+    winnerTimedMode = false;
+    winnerLives = 2;
+    winnerRound = 1;
+    winnerDeal = null;
+    winnerSelected = new Set();
+    winnerAnswered = false;
+    winnerGameOver = false;
+    winnerTimeLeft = 5;
+    renderWinnerLives();
+    winnerTimerEl.classList.add("hidden");
+    winnerTimerEl.classList.remove("warn", "running");
+    winnerTimerEl.querySelector(".timer-value").textContent = "5";
+    winnerBoardEl.innerHTML = "";
+    winnerPlayersEl.innerHTML = "";
+    winnerFeedbackEl.classList.add("hidden");
+    winnerFeedbackEl.classList.remove("ok", "bad");
+    winnerGameOverEl.classList.add("hidden");
+    winnerFinalScoreEl.textContent = "";
+  }
+
   function goToMenu() {
     resetGame();
+    resetWinnerGame();
     showScreen("menu");
   }
 
@@ -179,7 +252,13 @@
 
   document.getElementById("btn-trainer").addEventListener("click", () => {
     resetGame();
+    resetWinnerGame();
     showScreen("trainerMenu");
+  });
+  document.getElementById("btn-winner-game").addEventListener("click", () => {
+    resetGame();
+    resetWinnerGame();
+    showScreen("winnerMenu");
   });
   document.getElementById("btn-tests").addEventListener("click", startTests);
   document.getElementById("btn-exam").addEventListener("click", () => {
@@ -195,6 +274,12 @@
   });
   document.getElementById("btn-trainer-to-menu").addEventListener("click", goToMenu);
   document.getElementById("btn-over-menu").addEventListener("click", goToMenu);
+  document.getElementById("btn-winner-menu-back").addEventListener("click", goToMenu);
+  document.getElementById("btn-winner-game-back").addEventListener("click", () => {
+    resetWinnerGame();
+    showScreen("winnerMenu");
+  });
+  document.getElementById("btn-winner-over-menu").addEventListener("click", goToMenu);
   document.getElementById("btn-tests-back").addEventListener("click", goToMenu);
   document.getElementById("btn-test-menu").addEventListener("click", goToMenu);
   document.getElementById("btn-test-retry").addEventListener("click", startTests);
@@ -217,6 +302,14 @@
   document.getElementById("btn-mode-untimed").addEventListener("click", () => {
     timedMode = false;
     showScreen("difficulty");
+  });
+  document.getElementById("btn-winner-timed").addEventListener("click", () => {
+    winnerTimedMode = true;
+    startWinnerGame();
+  });
+  document.getElementById("btn-winner-untimed").addEventListener("click", () => {
+    winnerTimedMode = false;
+    startWinnerGame();
   });
   
   document.getElementById("btn-easy").addEventListener("click", () => startTrainer("easy"));
@@ -511,6 +604,271 @@
         answerInput.focus();
       }
     }
+  }
+
+  const WINNER_RANKS = [
+    { label: "2", value: 2, image: "2" },
+    { label: "3", value: 3, image: "3" },
+    { label: "4", value: 4, image: "4" },
+    { label: "5", value: 5, image: "5" },
+    { label: "6", value: 6, image: "6" },
+    { label: "7", value: 7, image: "7" },
+    { label: "8", value: 8, image: "8" },
+    { label: "9", value: 9, image: "9" },
+    { label: "10", value: 10, image: "10" },
+    { label: "J", value: 11, image: "J" },
+    { label: "Q", value: 12, image: "Q" },
+    { label: "K", value: 13, image: "K" },
+    { label: "A", value: 14, image: "A" },
+  ];
+  const WINNER_SUITS = ["clubs", "diamonds", "hearts", "spades"];
+
+  function winnerCardImage(card) {
+    const rankImage = card.rank >= 11 ? card.label : String(card.rank);
+    const heartAceName = card.rank === 14 && card.suit === "hearts" ? "A__hearts.png" : `${rankImage}_${card.suit}.png`;
+    return `images/cards/${heartAceName}`;
+  }
+
+  function createWinnerDeck() {
+    const deck = [];
+    WINNER_RANKS.forEach((rank) => {
+      WINNER_SUITS.forEach((suit) => {
+        deck.push({ rank: rank.value, label: rank.label, suit, id: `${rank.value}_${suit}` });
+      });
+    });
+    return deck;
+  }
+
+  function evaluateFiveCards(cards) {
+    const ranks = cards.map((card) => card.rank).sort((a, b) => b - a);
+    const counts = {};
+    ranks.forEach((rank) => {
+      counts[rank] = (counts[rank] || 0) + 1;
+    });
+    const groups = Object.keys(counts)
+      .map(Number)
+      .sort((a, b) => counts[b] - counts[a] || b - a);
+    const isFlush = cards.every((card) => card.suit === cards[0].suit);
+    const uniqueRanks = [...new Set(ranks)];
+    let straightHigh = 0;
+    if (uniqueRanks.length === 5) {
+      if (uniqueRanks[0] - uniqueRanks[4] === 4) straightHigh = uniqueRanks[0];
+      else if (uniqueRanks.join(",") === "14,5,4,3,2") straightHigh = 5;
+    }
+
+    if (isFlush && straightHigh) return [8, straightHigh];
+    if (groups.length === 2 && counts[groups[0]] === 4) return [7, groups[0], groups[1]];
+    if (groups.length === 2 && counts[groups[0]] === 3) return [6, groups[0], groups[1]];
+    if (isFlush) return [5, ...ranks];
+    if (straightHigh) return [4, straightHigh];
+    if (groups.length === 3 && counts[groups[0]] === 3) {
+      return [3, groups[0], ...groups.slice(1).sort((a, b) => b - a)];
+    }
+    if (groups.length === 3 && counts[groups[0]] === 2 && counts[groups[1]] === 2) {
+      return [2, Math.max(groups[0], groups[1]), Math.min(groups[0], groups[1]), groups[2]];
+    }
+    if (groups.length === 4 && counts[groups[0]] === 2) {
+      return [1, groups[0], ...groups.slice(1).sort((a, b) => b - a)];
+    }
+    return [0, ...ranks];
+  }
+
+  function compareWinnerScores(a, b) {
+    const length = Math.max(a.length, b.length);
+    for (let i = 0; i < length; i += 1) {
+      const difference = (a[i] || 0) - (b[i] || 0);
+      if (difference !== 0) return difference;
+    }
+    return 0;
+  }
+
+  function combinations(cards, size, start, result, output) {
+    if (result.length === size) {
+      output.push(result.slice());
+      return;
+    }
+    for (let i = start; i <= cards.length - (size - result.length); i += 1) {
+      result.push(cards[i]);
+      combinations(cards, size, i + 1, result, output);
+      result.pop();
+    }
+  }
+
+  function bestWinnerHand(cards) {
+    const hands = [];
+    combinations(cards, 5, 0, [], hands);
+    return hands.reduce((best, hand) => {
+      const score = evaluateFiveCards(hand);
+      if (!best || compareWinnerScores(score, best.score) > 0) return { score, cards: hand };
+      return best;
+    }, null);
+  }
+
+  function createWinnerDeal() {
+    const deck = shuffle(createWinnerDeck());
+    const playerCount = randInt(2, 5);
+    const players = [];
+    for (let i = 0; i < playerCount; i += 1) {
+      players.push({ name: `Игрок ${i + 1}`, cards: [deck.pop(), deck.pop()] });
+    }
+    const board = [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()];
+    players.forEach((player) => {
+      player.hand = bestWinnerHand(player.cards.concat(board));
+    });
+    const bestScore = players.reduce((best, player) => (
+      !best || compareWinnerScores(player.hand.score, best) > 0 ? player.hand.score : best
+    ), null);
+    const winners = players
+      .map((player, index) => (compareWinnerScores(player.hand.score, bestScore) === 0 ? index : -1))
+      .filter((index) => index >= 0);
+    return { players, board, winners };
+  }
+
+  function makeWinnerCardImage(card) {
+    const image = document.createElement("img");
+    image.className = "winner-card-image";
+    image.src = winnerCardImage(card);
+    image.alt = `${card.label} ${card.suit}`;
+    return image;
+  }
+
+  function renderWinnerDeal() {
+    winnerBoardEl.innerHTML = "";
+    winnerPlayersEl.innerHTML = "";
+    winnerDeal.board.forEach((card) => winnerBoardEl.appendChild(makeWinnerCardImage(card)));
+    winnerDeal.players.forEach((player, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "winner-player";
+      button.dataset.playerIndex = String(index);
+      button.setAttribute("aria-label", `Выбрать ${player.name}`);
+      const name = document.createElement("span");
+      name.className = "winner-player-name";
+      name.textContent = player.name;
+      const cards = document.createElement("span");
+      cards.className = "winner-cards";
+      player.cards.forEach((card) => cards.appendChild(makeWinnerCardImage(card)));
+      button.appendChild(name);
+      button.appendChild(cards);
+      button.addEventListener("click", () => selectWinner(index, button));
+      winnerPlayersEl.appendChild(button);
+    });
+  }
+
+  function startWinnerTimer() {
+    stopWinnerTimer();
+    if (!winnerTimedMode) {
+      winnerTimerEl.classList.add("hidden");
+      return;
+    }
+    winnerTimeLeft = 5;
+    const valueEl = winnerTimerEl.querySelector(".timer-value");
+    valueEl.textContent = "5";
+    winnerTimerEl.classList.remove("hidden", "warn");
+    void winnerTimerEl.offsetWidth;
+    winnerTimerEl.classList.add("running");
+    winnerTimerId = setInterval(() => {
+      winnerTimeLeft -= 1;
+      valueEl.textContent = String(Math.max(winnerTimeLeft, 0));
+      if (winnerTimeLeft <= 2) winnerTimerEl.classList.add("warn");
+      if (winnerTimeLeft <= 0) onWinnerTimeout();
+    }, 1000);
+  }
+
+  function winnerNames() {
+    return winnerDeal.winners.map((index) => winnerDeal.players[index].name).join(", ");
+  }
+
+  function winnerTitle() {
+    return winnerDeal.winners.length > 1 ? "Победители" : "Победитель";
+  }
+
+  function revealWinnerButtons(clickedButton, wrong) {
+    const buttons = [...winnerPlayersEl.querySelectorAll(".winner-player")];
+    buttons.forEach((button, index) => {
+      button.disabled = true;
+      if (winnerDeal.winners.includes(index)) button.classList.add("correct");
+    });
+    if (wrong && clickedButton) clickedButton.classList.add("wrong");
+  }
+
+  function scheduleWinnerNext() {
+    winnerAutoNextId = setTimeout(() => {
+      winnerAutoNextId = null;
+      nextWinnerDeal();
+    }, 2500);
+  }
+
+  function finishWinnerSuccess() {
+    winnerAnswered = true;
+    stopWinnerTimer();
+    revealWinnerButtons();
+    winnerFeedbackEl.classList.remove("hidden", "bad");
+    winnerFeedbackEl.classList.add("ok");
+    winnerFeedbackEl.textContent = `Верно! ${winnerTitle()}: ${winnerNames()}`;
+    scheduleWinnerNext();
+  }
+
+  function finishWinnerError(message, clickedButton) {
+    winnerAnswered = true;
+    stopWinnerTimer();
+    winnerLives -= 1;
+    renderWinnerLives();
+    revealWinnerButtons(clickedButton, Boolean(clickedButton));
+    winnerFeedbackEl.classList.remove("hidden", "ok");
+    winnerFeedbackEl.classList.add("bad");
+    winnerFeedbackEl.textContent = `${message} ${winnerTitle()}: ${winnerNames()}`;
+    if (winnerLives <= 0) {
+      winnerGameOver = true;
+      winnerGameOverEl.classList.remove("hidden");
+      winnerFinalScoreEl.textContent = `Правильных раздач: ${winnerRound - 1}`;
+    } else {
+      scheduleWinnerNext();
+    }
+  }
+
+  function selectWinner(index, button) {
+    if (winnerAnswered || winnerGameOver || winnerSelected.has(index)) return;
+    winnerSelected.add(index);
+    button.classList.add("selected");
+    if (!winnerDeal.winners.includes(index)) {
+      finishWinnerError("Ошибка.", button);
+      return;
+    }
+    if (winnerDeal.winners.every((winnerIndex) => winnerSelected.has(winnerIndex))) {
+      finishWinnerSuccess();
+    }
+  }
+
+  function onWinnerTimeout() {
+    if (winnerAnswered || winnerGameOver) return;
+    finishWinnerError("Время вышло.");
+  }
+
+  function nextWinnerDeal() {
+    if (winnerGameOver) return;
+    winnerRound += 1;
+    winnerDeal = createWinnerDeal();
+    winnerSelected = new Set();
+    winnerAnswered = false;
+    winnerRoundEl.textContent = `Раздача ${winnerRound}`;
+    winnerFeedbackEl.classList.add("hidden");
+    winnerFeedbackEl.classList.remove("ok", "bad");
+    winnerFeedbackEl.textContent = "";
+    renderWinnerDeal();
+    startWinnerTimer();
+  }
+
+  function startWinnerGame() {
+    const mode = winnerTimedMode;
+    resetWinnerGame();
+    winnerTimedMode = mode;
+    winnerGameOver = false;
+    showScreen("winnerGame");
+    winnerDeal = createWinnerDeal();
+    winnerRoundEl.textContent = "Раздача 1";
+    renderWinnerDeal();
+    startWinnerTimer();
   }
 
   const TEST_QUESTIONS = [

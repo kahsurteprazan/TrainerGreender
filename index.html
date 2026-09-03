@@ -12,17 +12,18 @@
     <section id="screen-login" class="screen">
       <div class="card">
         <h1>Greender Trainer</h1>
-        <p class="subtitle">Здравствуйте! Введите пароль:</p>
+        <p class="subtitle">Welcome! Enter your password to start training:</p>
         <input id="password-input" type="password" placeholder="Password" autocomplete="off" />
-        <p id="login-error" class="error hidden">НЕПРАВИЛЬНО!</p>
+        <p id="login-error" class="error hidden">Incorrect password!</p>
         <button id="login-btn" class="btn btn-primary" type="button">Войти</button>
       </div>
     </section>
 
     <section id="screen-menu" class="screen hidden">
       <div class="card">
-        <h1>Main Menu</h1>
+        <h1>Главное меню</h1>
         <button id="btn-trainer" class="btn btn-primary" type="button">Тренажер side потов</button>
+        <button id="btn-winner-game" class="btn btn-primary" type="button">Определение победителя</button>
         <button id="btn-tests" class="btn btn-primary" type="button">Тесты</button>
         <button id="btn-exam" class="btn btn-primary" type="button">Экзамен</button>
         <button id="btn-learn" class="btn btn-disabled" type="button" disabled>Обучение</button>
@@ -85,9 +86,51 @@
         <button id="btn-check" class="btn btn-primary" type="button">Проверить</button>
         <button id="btn-next" class="btn btn-primary hidden" type="button">Следующий</button>
         <div id="game-over" class="game-over hidden">
-          <h2>Game Over</h2>
+          <h2>Игра окончена</h2>
           <p id="final-score"></p>
           <button id="btn-over-menu" class="btn btn-primary" type="button">В главное меню</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-winner-menu" class="screen hidden">
+      <div class="card">
+        <button id="btn-winner-menu-back" class="btn btn-ghost" type="button">Назад</button>
+        <h1>Определение победителя</h1>
+        <p class="subtitle">Texas Hold'em: выберите всех игроков с лучшей комбинацией</p>
+        <button id="btn-winner-timed" class="btn btn-primary btn-mode" type="button">На время (5 сек)</button>
+        <button id="btn-winner-untimed" class="btn btn-primary btn-mode" type="button">Без времени</button>
+      </div>
+    </section>
+
+    <section id="screen-winner-game" class="screen hidden">
+      <div class="card winner-card">
+        <div class="trainer-top">
+          <button id="btn-winner-game-back" class="btn btn-ghost" type="button">Назад</button>
+          <div id="winner-lives" class="lives" aria-label="Жизни">
+            <span class="heart">❤️</span><span class="heart">❤️</span>
+          </div>
+        </div>
+        <div id="winner-timer" class="timer winner-timer hidden">
+          <div class="timer-track">
+            <div class="timer-bar"></div>
+          </div>
+          <span class="timer-value">5</span>
+        </div>
+        <p id="winner-round" class="meta">Раздача 1</p>
+        <div>
+          <p class="winner-section-title">Общие карты</p>
+          <div id="winner-board" class="winner-board"></div>
+        </div>
+        <div>
+          <p class="winner-section-title">Игроки</p>
+          <div id="winner-players" class="winner-players"></div>
+        </div>
+        <p id="winner-feedback" class="feedback hidden"></p>
+        <div id="winner-game-over" class="game-over hidden">
+          <h2>Игра окончена</h2>
+          <p id="winner-final-score"></p>
+          <button id="btn-winner-over-menu" class="btn btn-primary" type="button">В меню</button>
         </div>
       </div>
     </section>
