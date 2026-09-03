@@ -19,6 +19,11 @@
     trainer: document.getElementById("screen-trainer"),
     winnerMenu: document.getElementById("screen-winner-menu"),
     winnerGame: document.getElementById("screen-winner-game"),
+    learningMenu: document.getElementById("screen-learning-menu"),
+    learningDeal: document.getElementById("screen-learning-deal"),
+    learningDisputes: document.getElementById("screen-learning-disputes"),
+    learningBasics: document.getElementById("screen-learning-basics"),
+    learningCombinations: document.getElementById("screen-learning-combinations"),
     tests: document.getElementById("screen-tests"),
   };
 
@@ -57,6 +62,46 @@
   const winnerFeedbackEl = document.getElementById("winner-feedback");
   const winnerGameOverEl = document.getElementById("winner-game-over");
   const winnerFinalScoreEl = document.getElementById("winner-final-score");
+  const basicsProgressEl = document.getElementById("basics-progress");
+  const basicsTitleEl = document.getElementById("basics-title");
+  const basicsDescriptionEl = document.getElementById("basics-description");
+  const basicsQuestionEl = document.getElementById("basics-question");
+  const basicsOptionsEl = document.getElementById("basics-options");
+  const basicsFeedbackEl = document.getElementById("basics-feedback");
+  const basicsNextEl = document.getElementById("btn-basics-next");
+  const dealProgressEl = document.getElementById("deal-progress");
+  const dealTitleEl = document.getElementById("deal-title");
+  const dealDescriptionEl = document.getElementById("deal-description");
+  const dealQuestionEl = document.getElementById("deal-question");
+  const dealOptionsEl = document.getElementById("deal-options");
+  const dealFeedbackEl = document.getElementById("deal-feedback");
+  const dealNextEl = document.getElementById("btn-deal-next");
+  const dealSchemeEl = document.getElementById("deal-scheme");
+  const dealQuizEl = document.getElementById("deal-quiz");
+  const dealSortEl = document.getElementById("deal-sort");
+  const dealSortHintEl = document.getElementById("deal-sort-hint");
+  const dealSortItemsEl = document.getElementById("deal-sort-items");
+  const dealSortFeedbackEl = document.getElementById("deal-sort-feedback");
+  const disputesProgressEl = document.getElementById("disputes-progress");
+  const disputesTitleEl = document.getElementById("disputes-title");
+  const disputesDescriptionEl = document.getElementById("disputes-description");
+  const disputesQuestionEl = document.getElementById("disputes-question");
+  const disputesOptionsEl = document.getElementById("disputes-options");
+  const disputesFeedbackEl = document.getElementById("disputes-feedback");
+  const disputesNextEl = document.getElementById("btn-disputes-next");
+  const disputeTabButtons = {
+    redeals: document.getElementById("btn-disputes-redeals"),
+    dealer: document.getElementById("btn-disputes-dealer"),
+    player: document.getElementById("btn-disputes-player"),
+  };
+  const combinationProgressEl = document.getElementById("combination-progress");
+  const combinationTitleEl = document.getElementById("combination-title");
+  const combinationDescriptionEl = document.getElementById("combination-description");
+  const combinationCardsEl = document.getElementById("combination-cards");
+  const combinationQuestionEl = document.getElementById("combination-question");
+  const combinationOptionsEl = document.getElementById("combination-options");
+  const combinationFeedbackEl = document.getElementById("combination-feedback");
+  const combinationNextEl = document.getElementById("btn-combination-next");
 
   let timedMode = false;
   let difficulty = null;
@@ -280,6 +325,35 @@
     showScreen("winnerMenu");
   });
   document.getElementById("btn-winner-over-menu").addEventListener("click", goToMenu);
+  document.getElementById("btn-learn").addEventListener("click", () => {
+    resetGame();
+    resetWinnerGame();
+    showScreen("learningMenu");
+  });
+  document.getElementById("btn-learning-menu-back").addEventListener("click", goToMenu);
+  document.getElementById("btn-learning-basics").addEventListener("click", startBasics);
+  document.getElementById("btn-learning-deal").addEventListener("click", startDealLessons);
+  document.getElementById("btn-learning-disputes").addEventListener("click", startDisputeLessons);
+  disputeTabButtons.redeals.addEventListener("click", () => switchDisputeCategory("redeals"));
+  disputeTabButtons.dealer.addEventListener("click", () => switchDisputeCategory("dealer"));
+  disputeTabButtons.player.addEventListener("click", () => switchDisputeCategory("player"));
+  document.getElementById("btn-learning-combinations").addEventListener("click", startCombinations);
+  document.getElementById("btn-combinations-back").addEventListener("click", () => {
+    showScreen("learningMenu");
+  });
+  document.getElementById("btn-basics-back").addEventListener("click", () => {
+    showScreen("learningMenu");
+  });
+  basicsNextEl.addEventListener("click", nextBasics);
+  document.getElementById("btn-deal-back").addEventListener("click", () => {
+    showScreen("learningMenu");
+  });
+  dealNextEl.addEventListener("click", nextDealLesson);
+  document.getElementById("btn-disputes-back").addEventListener("click", () => {
+    showScreen("learningMenu");
+  });
+  disputesNextEl.addEventListener("click", nextDisputeLesson);
+  combinationNextEl.addEventListener("click", nextCombination);
   document.getElementById("btn-tests-back").addEventListener("click", goToMenu);
   document.getElementById("btn-test-menu").addEventListener("click", goToMenu);
   document.getElementById("btn-test-retry").addEventListener("click", startTests);
@@ -604,6 +678,769 @@
         answerInput.focus();
       }
     }
+  }
+
+  const COMBINATION_LESSONS = [
+    {
+      title: "Старшая карта",
+      description: "Если ни у кого нет другой комбинации, побеждает самая старшая карта. При совпадении сравниваются следующие карты — кикеры.",
+      cards: ["A__hearts.png", "10_spades.png", "8_clubs.png", "5_diamonds.png", "2_hearts.png"],
+      question: "Какая комбинация показана?",
+      options: ["Старшая карта", "Пара", "Две пары"],
+      correct: 0,
+    },
+    {
+      title: "Пара",
+      description: "Пара — это две карты одного достоинства. Сначала сравнивается достоинство пары, затем кикеры.",
+      cards: ["K_hearts.png", "K_spades.png", "9_clubs.png", "6_diamonds.png", "2_hearts.png"],
+      question: "Сколько одинаковых карт нужно для пары?",
+      options: ["Две", "Три", "Четыре"],
+      correct: 0,
+    },
+    {
+      title: "Две пары",
+      description: "Две пары — две разные пары карт одного достоинства. Сначала сравнивается старшая пара, затем младшая и кикер.",
+      cards: ["Q_hearts.png", "Q_spades.png", "7_clubs.png", "7_diamonds.png", "A_spades.png"],
+      question: "Что определяет победителя при одинаковых двух парах?",
+      options: ["Кикер", "Масть карт", "Количество игроков"],
+      correct: 0,
+    },
+    {
+      title: "Тройка",
+      description: "Тройка — три карты одного достоинства. В покере её также называют сетом или трипсом в зависимости от ситуации.",
+      cards: ["8_hearts.png", "8_spades.png", "8_clubs.png", "K_diamonds.png", "3_hearts.png"],
+      question: "Сколько карт одного достоинства образуют тройку?",
+      options: ["Две", "Три", "Пять"],
+      correct: 1,
+    },
+    {
+      title: "Стрит",
+      description: "Стрит — пять карт подряд по достоинству. Масти карт могут быть разными. Туз может быть младшей картой в комбинации A-2-3-4-5.",
+      cards: ["5_hearts.png", "6_spades.png", "7_clubs.png", "8_diamonds.png", "9_hearts.png"],
+      question: "Обязаны ли карты стрита быть одной масти?",
+      options: ["Да", "Нет", "Только две карты"],
+      correct: 1,
+    },
+    {
+      title: "Флеш",
+      description: "Флеш — пять карт одной масти. Достоинства карт не обязаны идти подряд.",
+      cards: ["A__hearts.png", "J_hearts.png", "8_hearts.png", "5_hearts.png", "2_hearts.png"],
+      question: "Что объединяет карты во флеше?",
+      options: ["Одна масть", "Одинаковое достоинство", "Порядок по старшинству"],
+      correct: 0,
+    },
+    {
+      title: "Фулл-хаус",
+      description: "Фулл-хаус состоит из тройки и пары. Сначала сравнивается тройка, затем пара.",
+      cards: ["10_hearts.png", "10_spades.png", "10_clubs.png", "4_diamonds.png", "4_hearts.png"],
+      question: "Из чего состоит фулл-хаус?",
+      options: ["Тройка и пара", "Две пары", "Пять карт одной масти"],
+      correct: 0,
+    },
+    {
+      title: "Каре",
+      description: "Каре — четыре карты одного достоинства. Пятая карта называется кикером и учитывается, если это необходимо.",
+      cards: ["9_hearts.png", "9_spades.png", "9_clubs.png", "9_diamonds.png", "A_spades.png"],
+      question: "Сколько одинаковых карт образуют каре?",
+      options: ["Три", "Четыре", "Пять"],
+      correct: 1,
+    },
+    {
+      title: "Стрит-флеш",
+      description: "Стрит-флеш — пять последовательных карт одной масти. Это сильнее каре.",
+      cards: ["5_spades.png", "6_spades.png", "7_spades.png", "8_spades.png", "9_spades.png"],
+      question: "Какие два признака нужны для стрит-флеша?",
+      options: ["Последовательность и одна масть", "Пара и тройка", "Только одна масть"],
+      correct: 0,
+    },
+  ];
+
+  let combinationIndex = 0;
+
+  function startCombinations() {
+    combinationIndex = 0;
+    showScreen("learningCombinations");
+    renderCombinationLesson();
+  }
+
+  function renderCombinationLesson() {
+    const lesson = COMBINATION_LESSONS[combinationIndex];
+    combinationProgressEl.textContent = `Урок ${combinationIndex + 1} из ${COMBINATION_LESSONS.length}`;
+    combinationTitleEl.textContent = lesson.title;
+    combinationDescriptionEl.textContent = lesson.description;
+    combinationCardsEl.innerHTML = "";
+    lesson.cards.forEach((fileName) => {
+      const image = document.createElement("img");
+      image.className = "learning-card-image";
+      image.src = `images/cards/${fileName}`;
+      image.alt = lesson.title;
+      combinationCardsEl.appendChild(image);
+    });
+    combinationQuestionEl.textContent = lesson.question;
+    combinationOptionsEl.innerHTML = "";
+    combinationFeedbackEl.classList.add("hidden");
+    combinationFeedbackEl.classList.remove("ok", "bad");
+    combinationNextEl.classList.add("hidden");
+    lesson.options.forEach((option, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-primary option";
+      button.textContent = option;
+      button.addEventListener("click", () => answerCombination(index, button));
+      combinationOptionsEl.appendChild(button);
+    });
+  }
+
+  function answerCombination(index, clickedButton) {
+    const lesson = COMBINATION_LESSONS[combinationIndex];
+    const buttons = [...combinationOptionsEl.querySelectorAll(".option")];
+    buttons.forEach((button) => {
+      button.disabled = true;
+    });
+    if (index === lesson.correct) {
+      clickedButton.classList.add("correct");
+      combinationFeedbackEl.textContent = "Верно!";
+      combinationFeedbackEl.classList.remove("hidden", "bad");
+      combinationFeedbackEl.classList.add("ok");
+    } else {
+      clickedButton.classList.add("wrong");
+      buttons[lesson.correct].classList.add("correct");
+      combinationFeedbackEl.textContent = `Неверно. Правильный ответ: ${lesson.options[lesson.correct]}`;
+      combinationFeedbackEl.classList.remove("hidden", "ok");
+      combinationFeedbackEl.classList.add("bad");
+    }
+    combinationNextEl.textContent = combinationIndex === COMBINATION_LESSONS.length - 1
+      ? "Завершить обучение"
+      : "Следующая комбинация";
+    combinationNextEl.classList.remove("hidden");
+  }
+
+  function nextCombination() {
+    if (combinationIndex >= COMBINATION_LESSONS.length - 1) {
+      showScreen("learningMenu");
+      return;
+    }
+    combinationIndex += 1;
+    renderCombinationLesson();
+  }
+
+  const BASICS_LESSONS = [
+    {
+      title: "Цель игры",
+      description: "В безлимитном Техасском холдеме игрок старается забрать банк. Для этого нужно собрать лучшую комбинацию из пяти карт или заставить всех соперников сбросить карты.",
+      question: "Как игрок может выиграть раздачу?",
+      options: ["Только собрав флеш", "Собрав лучшую комбинацию или выбив соперников ставками", "Только сделав олл-ин"],
+      correct: 1,
+    },
+    {
+      title: "Баттон и блайнды",
+      description: "Баттон (дилерский жетон) определяет последнюю позицию за столом и перемещается по часовой стрелке после каждой раздачи. После баттона находятся малый и большой блайнды.",
+      question: "Что такое большой блайнд?",
+      options: ["Обязательная ставка до раздачи", "Последняя карта на столе", "Кнопка выбора победителя"],
+      correct: 0,
+    },
+    {
+      title: "Анте",
+      description: "В нашей игре анте берётся с большого блайнда до раздачи карт в размере одного большого блайнда. Сначала определяется позиция BB и анте, затем анте забирается в банк.",
+      question: "С кого берётся анте и какого оно размера?",
+      options: ["Со всех игроков по половине BB", "С большого блайнда в размере 1 BB", "Только с баттона в размере 1 SB"],
+      correct: 1,
+    },
+    {
+      title: "Префлоп",
+      description: "Префлоп — первый раунд торгов до выхода общих карт. После блайндов и анте дилер раздаёт по две карманные карты. Первое слово у игрока после большого блайнда.",
+      question: "Что происходит на префлопе?",
+      options: ["Открываются пять общих карт", "Игроки получают по две карманные карты и проходят первый круг торгов", "Открывается только ривер"],
+      correct: 1,
+    },
+    {
+      title: "Флоп",
+      description: "Флоп — первые три общие карты. После уравнивания ставок дилер забирает фишки в банк, делает стук, сжигает карту и открывает флоп. Торги начинаются с малого блайнда.",
+      question: "Сколько общих карт выкладывается на флопе?",
+      options: ["Одна", "Три", "Пять"],
+      correct: 1,
+    },
+    {
+      title: "Тёрн",
+      description: "Тёрн — четвёртая общая карта. После завершения торгов на флопе дилер забирает фишки в банк, делает стук, сжигает карту, открывает тёрн и запускает следующий круг торгов.",
+      question: "Сколько общих карт уже лежит на столе после тёрна?",
+      options: ["Три", "Четыре", "Пять"],
+      correct: 1,
+    },
+    {
+      title: "Ривер",
+      description: "Ривер — пятая общая карта. После торгов на тёрне дилер сжигает карту, открывает ривер, проводит последний круг торгов и переходит к шоудауну.",
+      question: "Что происходит после торгов на ривере?",
+      options: ["Снова выкладывают флоп", "Начинается вскрытие или банк забирает последний оставшийся игрок", "Раздача возвращается на префлоп"],
+      correct: 1,
+    },
+    {
+      title: "Действия игрока",
+      description: "Чек — пропустить ход без ставки. Бет — поставить. Колл — уравнять ставку. Рейз — увеличить ставку. Фолд — сбросить карты и выйти из раздачи.",
+      question: "Что означает фолд?",
+      options: ["Уравнять ставку", "Сбросить карты", "Увеличить ставку"],
+      correct: 1,
+    },
+    {
+      title: "Вскрытие",
+      description: "На шоудауне игроки открывают карты, если лидера нельзя определить без вскрытия. Если никто не открывает первым, слово идёт от первого игрока после баттона по часовой стрелке. Увидев старшую руку, игрок может сбросить карты закрытыми.",
+      question: "Сколько карт входит в итоговую покерную комбинацию?",
+      options: ["Пять", "Семь", "Две"],
+      correct: 0,
+    },
+    {
+      title: "Основной и сайд-поты",
+      description: "Игрок в олл-ине больше не участвует в торгах и претендует только на банки, в которые вложился. Основной банк и сайд-поты формируются по уровням вкладов; в сайд-поте участвуют только внесшие в него фишки.",
+      question: "Может ли игрок с меньшим олл-ином выиграть сайд-пот, в который он не вкладывался?",
+      options: ["Да, если у него лучшая комбинация", "Нет", "Да, только на ривере"],
+      correct: 1,
+    },
+    {
+      title: "Видимые фишки и карты",
+      description: "Стек игрока должен быть виден, и любой игрок может спросить его размер. Нельзя отходить от стола с картами или показывать карты другим игрокам. Открытая рука до шоудауна считается мёртвой, кроме хедз-апа.",
+      question: "Что обязан контролировать дилер за столом?",
+      options: ["Только цвет фишек", "Видимость стеков и сохранность закрытых карт", "Только карты баттона"],
+      correct: 1,
+    },
+    {
+      title: "Олл-ин и короткий стек",
+      description: "Олл-ин — ставка всех оставшихся фишек. Игрок после олл-ина больше не участвует в торгах и претендует только на банки, в которые вложился. Если стек меньше большого блайнда, игрок идёт в олл-ин, а остальные коллируют BB.",
+      question: "На какие банки претендует игрок после олл-ина?",
+      options: ["На все банки", "Только на банки, в которые он вложился", "Только на сайд-пот"],
+      correct: 1,
+    },
+    {
+      title: "Хедз-ап",
+      description: "Хедз-ап — игра между двумя оставшимися игроками. Баттон разыгрывается заново: на баттоне находится малый блайнд, раздача начинается с большого блайнда, а первым действует малый блайнд.",
+      question: "Кто первым действует в хедз-апе?",
+      options: ["Игрок на большом блайнде", "Игрок на баттоне и малом блайнде", "Дилер"],
+      correct: 1,
+    },
+    {
+      title: "Мёртвый баттон",
+      description: "Мёртвый баттон находится на месте выбывшего игрока. Это пустой бокс: карты этому месту не раздаются, а позиции блайндов определяются по правилам стола.",
+      question: "Что означает мёртвый баттон?",
+      options: ["Баттон без игрока, на это место карты не раздаются", "Дополнительный игрок", "Отмена всех блайндов"],
+      correct: 0,
+    },
+    {
+      title: "Повышение блайндов",
+      description: "При сигнале о повышении во время незавершённой раздачи игра заканчивается на старых блайндах, а следующая раздача идёт по новым. Если первая карта уже у игрока, остаются старые блайнды; до выдачи первой карты действуют новые.",
+      question: "Какие блайнды применяются, если первая карта уже выдана игроку?",
+      options: ["Новые", "Старые", "Блайнды отменяются"],
+      correct: 1,
+    },
+  ];
+
+  let basicsIndex = 0;
+
+  function startBasics() {
+    basicsIndex = 0;
+    showScreen("learningBasics");
+    renderBasicsLesson();
+  }
+
+  function renderBasicsLesson() {
+    const lesson = BASICS_LESSONS[basicsIndex];
+    basicsProgressEl.textContent = `Урок ${basicsIndex + 1} из ${BASICS_LESSONS.length}`;
+    basicsTitleEl.textContent = lesson.title;
+    basicsDescriptionEl.textContent = lesson.description;
+    basicsQuestionEl.textContent = lesson.question;
+    basicsOptionsEl.innerHTML = "";
+    basicsFeedbackEl.classList.add("hidden");
+    basicsFeedbackEl.classList.remove("ok", "bad");
+    basicsNextEl.classList.add("hidden");
+    lesson.options.forEach((option, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-primary option";
+      button.textContent = option;
+      button.addEventListener("click", () => answerBasics(index, button));
+      basicsOptionsEl.appendChild(button);
+    });
+  }
+
+  function answerBasics(index, clickedButton) {
+    const lesson = BASICS_LESSONS[basicsIndex];
+    const buttons = [...basicsOptionsEl.querySelectorAll(".option")];
+    buttons.forEach((button) => {
+      button.disabled = true;
+    });
+    if (index === lesson.correct) {
+      clickedButton.classList.add("correct");
+      basicsFeedbackEl.textContent = "Верно!";
+      basicsFeedbackEl.classList.remove("hidden", "bad");
+      basicsFeedbackEl.classList.add("ok");
+    } else {
+      clickedButton.classList.add("wrong");
+      buttons[lesson.correct].classList.add("correct");
+      basicsFeedbackEl.textContent = `Неверно. Правильный ответ: ${lesson.options[lesson.correct]}`;
+      basicsFeedbackEl.classList.remove("hidden", "ok");
+      basicsFeedbackEl.classList.add("bad");
+    }
+    basicsNextEl.textContent = basicsIndex === BASICS_LESSONS.length - 1
+      ? "Завершить обучение"
+      : "Следующий урок";
+    basicsNextEl.classList.remove("hidden");
+  }
+
+  function nextBasics() {
+    if (basicsIndex >= BASICS_LESSONS.length - 1) {
+      showScreen("learningMenu");
+      return;
+    }
+    basicsIndex += 1;
+    renderBasicsLesson();
+  }
+
+  const DEAL_LESSONS = [
+    {
+      title: "Подготовка колоды",
+      description: "Дилер приходит с готовой колодой. При смене дилера он проверяет наличие 52 целых карт, выполняет шеми-шафл, три врезки, срезку и проверяет позиции малого и большого блайндов.",
+      question: "С чего начинается работа дилера?",
+      options: ["С проверки готовой колоды", "С раздачи флопа", "С выдачи банка победителю"],
+      correct: 0,
+    },
+    {
+      title: "Spread перед началом",
+      description: "Spread — показ всей готовой колоды лицом вверх перед собой. Он нужен, чтобы убедиться, что на месте все 52 карты, нет дублей, разных рубашек и повреждённых карт.",
+      question: "Для чего нужен spread?",
+      options: ["Чтобы проверить всю колоду и убедиться, что все карты на месте", "Чтобы выбрать победителя раздачи", "Чтобы определить размер большого блайнда"],
+      correct: 0,
+    },
+    {
+      title: "Розыгрыш баттона",
+      description: "В начале турнира после spread, шеми-шафла, 2-1-1 и срезки дилер разыгрывает баттон: открывает по одной карте на каждого игрока. Баттон получает игрок с самой старшей картой; при равном достоинстве учитывается старшинство мастей. При смене дилера баттон не разыгрывается заново.",
+      question: "Сколько карт открывают для розыгрыша баттона?",
+      options: ["Одну карту на весь стол", "По одной карте на каждого игрока", "Всегда пять карт"],
+      correct: 1,
+    },
+    {
+      title: "Перетасовка 2-1-1",
+      description: "Схема 2-1-1 — два рифла, стрип и ещё один рифл. В начале турнира после неё выполняется срезка и розыгрыш баттона. После каждой раздачи колода снова перемешивается 2-1-1 и срезается.",
+      question: "Что означает схема 2-1-1?",
+      options: ["Два рифла, стрип, один рифл", "Две раздачи, один флоп, один ривер", "Два стрипа и один рифл"],
+      correct: 0,
+    },
+    {
+      title: "Раздача карманных карт",
+      description: "После определения MB, BB и анте дилер забирает анте и раздаёт карманные карты по часовой стрелке, начиная с малого блайнда: один круг, затем второй. При вскрытии одной карты её объявляют и заменяют после завершения раздачи карманных карт по процедуре рума.",
+      question: "Сколько карманных карт получает игрок в холдеме?",
+      options: ["Одну", "Две", "Пять"],
+      correct: 1,
+    },
+    {
+      title: "Общие карты",
+      description: "После каждого завершённого круга торгов дилер забирает ставки в банк и делает стук. Затем сжигает карту и выкладывает флоп из трёх карт, тёрн и ривер — по одной карте.",
+      question: "Сколько карт входит во флоп?",
+      options: ["Одна", "Три", "Четыре"],
+      correct: 1,
+    },
+    {
+      title: "После раздачи",
+      description: "После шоудауна дилер разбирает сайд-поты, вручает выигрыш, собирает карты и передвигает баттон. Перед следующей раздачей выполняется 2-1-1 и срезка.",
+      question: "Что нужно сделать перед следующей раздачей?",
+      options: ["Сразу раздать карты", "Выполнить перемешивание 2-1-1", "Оставить карты как есть"],
+      correct: 1,
+    },
+    {
+      title: "Полная схема раздачи",
+      description: "Полный порядок работы дилера: начало турнира включает розыгрыш баттона; при смене дилера выполняются проверка колоды, шеми-шафл, три врезки, срезка и проверка блайндов. После каждой раздачи баттон передвигается.",
+      question: "Что делает дилер после определения победителя?",
+      options: ["Выдаёт фишки победителю или делит банк между победителями", "Сразу раздаёт новые карты", "Возвращает фишки в стек дилера"],
+      correct: 0,
+      scheme: true,
+    },
+    {
+      title: "Собери схему раздачи",
+      description: "Перетащи этапы начала турнира в правильном порядке — от spread до сбора карт и перемещения баттона.",
+      sort: true,
+    },
+  ];
+
+  let dealLessonIndex = 0;
+  let dealSortChecked = false;
+
+  const DEAL_SORT_STEPS = [
+    "Spread всей колоды",
+    "Шеми-шафл",
+    "2-1-1 и срезка",
+    "Розыгрыш баттона",
+    "Определение MB, BB и анте",
+    "Забрать анте",
+    "Раздать руки по 2 карты",
+    "Торги на префлопе",
+    "Флоп, тёрн и ривер с сжиганием",
+    "Шоудаун",
+    "Разобрать сайд-поты",
+    "Вручить выигрыш",
+    "Собрать карты",
+    "Передвинуть баттон",
+  ];
+
+  function startDealLessons() {
+    dealLessonIndex = 0;
+    showScreen("learningDeal");
+    renderDealLesson();
+  }
+
+  function renderDealLesson() {
+    const lesson = DEAL_LESSONS[dealLessonIndex];
+    dealProgressEl.textContent = `Урок ${dealLessonIndex + 1} из ${DEAL_LESSONS.length}`;
+    dealTitleEl.textContent = lesson.title;
+    dealDescriptionEl.textContent = lesson.description;
+    dealQuestionEl.textContent = lesson.question || "";
+    dealOptionsEl.innerHTML = "";
+    dealFeedbackEl.classList.add("hidden");
+    dealFeedbackEl.classList.remove("ok", "bad");
+    dealSchemeEl.innerHTML = "";
+    dealSchemeEl.classList.toggle("hidden", !lesson.scheme);
+    dealQuizEl.classList.toggle("hidden", Boolean(lesson.sort));
+    dealSortEl.classList.toggle("hidden", !lesson.sort);
+    dealSortFeedbackEl.classList.add("hidden");
+    dealSortFeedbackEl.classList.remove("ok", "bad");
+    dealSortChecked = false;
+    dealNextEl.classList.toggle("hidden", !lesson.sort);
+    dealNextEl.textContent = lesson.sort ? "Проверить порядок" : "Следующий урок";
+
+    if (lesson.scheme) {
+      DEAL_SORT_STEPS.forEach((step, index) => {
+        const item = document.createElement("div");
+        item.className = "deal-scheme-step";
+        item.innerHTML = `<span class="deal-scheme-number">${index + 1}</span><span>${step}</span>`;
+        dealSchemeEl.appendChild(item);
+      });
+    }
+
+    if (lesson.sort) {
+      dealSortHintEl.textContent = "Зажми этап и перетащи его на нужное место.";
+      const shuffled = shuffle(DEAL_SORT_STEPS);
+      shuffled.forEach((step) => {
+        const item = document.createElement("div");
+        item.className = "deal-sort-item";
+        item.draggable = true;
+        item.dataset.step = step;
+        item.textContent = step;
+        item.addEventListener("pointerdown", (event) => {
+          item.setPointerCapture(event.pointerId);
+          item.classList.add("dragging");
+        });
+        item.addEventListener("pointermove", (event) => {
+          if (!item.classList.contains("dragging")) return;
+          const target = document.elementFromPoint(event.clientX, event.clientY);
+          const targetItem = target && target.closest(".deal-sort-item");
+          if (!targetItem || targetItem === item) return;
+          const rect = targetItem.getBoundingClientRect();
+          const after = event.clientY > rect.top + rect.height / 2;
+          dealSortItemsEl.insertBefore(item, after ? targetItem.nextSibling : targetItem);
+        });
+        item.addEventListener("pointerup", () => item.classList.remove("dragging"));
+        item.addEventListener("pointercancel", () => item.classList.remove("dragging"));
+        item.addEventListener("dragstart", () => item.classList.add("dragging"));
+        item.addEventListener("dragend", () => item.classList.remove("dragging"));
+        item.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          const dragging = dealSortItemsEl.querySelector(".dragging");
+          if (dragging && dragging !== item) {
+            const rect = item.getBoundingClientRect();
+            const after = event.clientY > rect.top + rect.height / 2;
+            dealSortItemsEl.insertBefore(dragging, after ? item.nextSibling : item);
+          }
+        });
+        dealSortItemsEl.appendChild(item);
+      });
+      return;
+    }
+
+    lesson.options.forEach((option, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-primary option";
+      button.textContent = option;
+      button.addEventListener("click", () => answerDealLesson(index, button));
+      dealOptionsEl.appendChild(button);
+    });
+  }
+
+  function answerDealLesson(index, clickedButton) {
+    const lesson = DEAL_LESSONS[dealLessonIndex];
+    const buttons = [...dealOptionsEl.querySelectorAll(".option")];
+    buttons.forEach((button) => {
+      button.disabled = true;
+    });
+    if (index === lesson.correct) {
+      clickedButton.classList.add("correct");
+      dealFeedbackEl.textContent = "Верно!";
+      dealFeedbackEl.classList.remove("hidden", "bad");
+      dealFeedbackEl.classList.add("ok");
+    } else {
+      clickedButton.classList.add("wrong");
+      buttons[lesson.correct].classList.add("correct");
+      dealFeedbackEl.textContent = `Неверно. Правильный ответ: ${lesson.options[lesson.correct]}`;
+      dealFeedbackEl.classList.remove("hidden", "ok");
+      dealFeedbackEl.classList.add("bad");
+    }
+    dealNextEl.textContent = dealLessonIndex === DEAL_LESSONS.length - 1
+      ? "Завершить обучение"
+      : "Следующий урок";
+    dealNextEl.classList.remove("hidden");
+  }
+
+  function nextDealLesson() {
+    if (DEAL_LESSONS[dealLessonIndex].sort) {
+      if (!dealSortChecked) {
+        const actual = [...dealSortItemsEl.children].map((item) => item.dataset.step);
+        const isCorrect = actual.every((step, index) => step === DEAL_SORT_STEPS[index]);
+        if (!isCorrect) {
+          dealSortFeedbackEl.textContent = "Порядок неверный. Попробуй переставить этапы.";
+          dealSortFeedbackEl.classList.remove("hidden", "ok");
+          dealSortFeedbackEl.classList.add("bad");
+          return;
+        }
+        dealSortChecked = true;
+        dealSortFeedbackEl.textContent = "Верно! Это полная схема раздачи.";
+        dealSortFeedbackEl.classList.remove("hidden", "bad");
+        dealSortFeedbackEl.classList.add("ok");
+        dealNextEl.textContent = "Завершить обучение";
+        return;
+      }
+      showScreen("learningMenu");
+      return;
+    }
+    if (dealLessonIndex >= DEAL_LESSONS.length - 1) {
+      showScreen("learningMenu");
+      return;
+    }
+    dealLessonIndex += 1;
+    renderDealLesson();
+  }
+
+  const DISPUTE_LESSONS_BY_CATEGORY = {
+    redeals: [
+      {
+        title: "Преждевременно открытый флоп",
+        description: "Если флоп открыт преждевременно и активных действий до него не было, карты замешиваются обратно и флоп выкладывается заново. При ошибках на флопе, тёрне или ривере карты не срезаются.",
+        question: "Что делать с преждевременно открытым флопом без активных действий?",
+        options: ["Оставить флоп", "Замешать обратно и выложить заново без срезки", "Сразу перейти к тёрну"],
+        correct: 1,
+      },
+      {
+        title: "Четыре карты на флопе",
+        description: "Если на флопе открыли четыре карты вместо трёх, весь флоп убирается, замешивается обратно и выкладывается заново.",
+        question: "Как исправить флоп из четырёх карт?",
+        options: ["Убрать лишнюю карту", "Убрать весь флоп, замешать и выложить заново", "Оставить четыре карты"],
+        correct: 1,
+      },
+      {
+        title: "Не сожгли карту перед флопом",
+        description: "Если карта перед флопом не была сожжена и активных действий нет, карты берутся обратно, выполняется шафл три раза без срезки, затем сжигается карта и выкладывается флоп.",
+        question: "Что делают, если перед флопом забыли сжечь карту?",
+        options: ["Продолжают без исправления", "Три раза шафлят без срезки, сжигают карту и выкладывают флоп", "Делают новую срезку"],
+        correct: 1,
+      },
+      {
+        title: "Преждевременно открытый тёрн",
+        description: "Если тёрн открыт раньше времени и активных действий до него не было, карту возвращают в колоду, замешивают и выкладывают тёрн заново без срезки.",
+        question: "Что делать с ранним тёрном без активных действий?",
+        options: ["Замешать обратно и выложить новый тёрн без срезки", "Оставить карту", "Перейти к шоудауну"],
+        correct: 0,
+      },
+      {
+        title: "Преждевременно открытый ривер",
+        description: "Если ривер открыт раньше времени и активных действий до него не было, карту возвращают в колоду, замешивают и выкладывают ривер заново без срезки.",
+        question: "Что делать с ранним ривером без активных действий?",
+        options: ["Оставить ривер", "Замешать обратно и выложить новый ривер без срезки", "Убрать карту без замены"],
+        correct: 1,
+      },
+      {
+        title: "Вскрытая карта после большого блайнда",
+        description: "Если после большого блайнда вскрылась одна или несколько карт, их показывают столу и кладут рубашкой вниз в сжигание. Пропущенный бокс продолжают раздавать по часовой стрелке, а засвеченную карту используют для флопа.",
+        question: "Что делают с вскрытой картой после большого блайнда?",
+        options: ["Сразу объявляют перераздачу", "Показывают, кладут в сжигание и продолжают раздачу по процедуре", "Прячут карту и оставляют"],
+        correct: 1,
+      },
+      {
+        title: "Основания для перераздачи",
+        description: "Перераздача проводится, если до большого блайнда вскрылась карта, при раздаче вскрылись любые две карты, пропустили игрока с фишками, в колоде меньше 52 карт, обнаружен дубль, разные рубашки или карта не целая.",
+        question: "Что является основанием для перераздачи?",
+        options: ["Любая одна вскрытая карта после BB", "Меньше 52 карт, дубль или две вскрытые карты при раздаче", "Любой пропущенный чек"],
+        correct: 1,
+      },
+    ],
+    dealer: [
+      {
+        title: "Преждевременная выкладка карты",
+        description: "Если дилер преждевременно открыл карту на любой улице, он останавливает действие и сообщает об ошибке. Дальнейшее решение принимается по правилам соответствующей улицы.",
+        question: "Что делает дилер при преждевременной выкладке карты?",
+        options: ["Игнорирует ошибку", "Останавливает действие и применяет правило для этой улицы", "Сразу объявляет победителя"],
+        correct: 1,
+      },
+      {
+        title: "Забыли срезать колоду",
+        description: "Если после перемешивания дилер забыл выполнить срезку колоды, он останавливает процедуру и исправляет ошибку по правилам рума до продолжения раздачи.",
+        question: "Что делать, если дилер забыл срезать колоду?",
+        options: ["Продолжить раздачу как есть", "Остановиться и исправить ошибку по процедуре рума", "Выдать банк"],
+        correct: 1,
+      },
+      {
+        title: "Недоданная карта",
+        description: "Если дилер пропустил игрока и не выдал карту, раздачу нужно остановить и применить установленную процедуру исправления. Нельзя молча продолжать раздачу.",
+        question: "Как поступить, если игроку не додали карту?",
+        options: ["Молча продолжить раздачу", "Остановить раздачу и применить процедуру рума", "Выдать игроку две карты сразу"],
+        correct: 1,
+      },
+      {
+        title: "Открытые карманные карты",
+        description: "Если при раздаче карманных карт карта игрока открылась, дилер останавливает действие и применяет процедуру для открытой карты. Нельзя самостоятельно решать, кому оставить карту.",
+        question: "Что делать с открытой картой при раздаче карманных карт?",
+        options: ["Спрятать карту и продолжить", "Остановить действие и применить правило открытой карты", "Отдать карту дилеру"],
+        correct: 1,
+      },
+      {
+        title: "Забыли сжечь карту",
+        description: "Перед флопом, тёрном и ривером дилер должен сжечь карту. Если карта не была сожжена, действие останавливается и ошибка исправляется по процедуре рума.",
+        question: "Когда дилер должен сжигать карту?",
+        options: ["Перед флопом, тёрном и ривером", "Только после ривера", "Только перед префлопом"],
+        correct: 0,
+      },
+      {
+        title: "Ранний шоудаун",
+        description: "Если дилер объявил шоудаун раньше времени и игрок открыл карты, игрок остаётся в игре, но дальше может только уравнивать ставки.",
+        question: "Что происходит с игроком, открывшим карты после раннего объявления шоудауна?",
+        options: ["Игрок сразу выбывает", "Игрок остаётся в игре, но может только коллировать", "Раздача автоматически перераздаётся"],
+        correct: 1,
+      },
+    ],
+    player: [
+      {
+        title: "Действие вне очереди",
+        description: "Если игрок намеренно действует вне очереди, дилер делает предупреждение. Если такие нарушения повторятся три раза, игрок получает отстранение на три раздачи.",
+        question: "Какое последствие предусмотрено за три намеренных действия вне очереди?",
+        options: ["Ничего", "Отстранение от игры на три раздачи", "Автоматическая победа"],
+        correct: 1,
+      },
+      {
+        title: "Недостаточная ставка и словесное объявление",
+        description: "Устное объявление обязательно исполняется фишками. Если игрок объявил рейз, но фишек не хватает, он доставляет минимальный рейз; больше заявленного ставить нельзя. Если сумма не названа, рейз считается минимальным.",
+        question: "Что должен сделать игрок после устного объявления рейза?",
+        options: ["Сделать только колл", "Выставить фишки на минимальный объявленный рейз", "Забрать фишки и уйти в пас"],
+        correct: 1,
+      },
+      {
+        title: "Олл-ин меньшего размера",
+        description: "Игрок может поставить олл-ин меньше полной ставки. Его фишки участвуют в основном банке и только в тех сайд-потах, в которые он может вложиться.",
+        question: "Может ли короткий олл-ин участвовать во всех сайд-потах?",
+        options: ["Да, всегда", "Нет, только в доступных ему банках", "Только если попросит дилера"],
+        correct: 1,
+      },
+      {
+        title: "Нечётная фишка при делении банка",
+        description: "Если банк нельзя разделить поровну и остаётся одна нечётная фишка, её получает первый победитель по часовой стрелке от баттона.",
+        question: "Кому отдают нечётную фишку при делении банка?",
+        options: ["Первому победителю по часовой стрелке от баттона", "Дилеру", "Игроку с самой высокой картой"],
+        correct: 0,
+      },
+      {
+        title: "Одна фишка крупного номинала",
+        description: "Если игрок ставит одну фишку крупнее необходимого колла и не объявляет рейз, это считается коллом. Сдача возвращается после завершения круга торгов.",
+        question: "Как трактуется одна крупная фишка без объявления рейза?",
+        options: ["Как рейз", "Как колл, сдача возвращается после круга", "Как пас"],
+        correct: 1,
+      },
+      {
+        title: "Несколько крупных фишек без объявления",
+        description: "Если игрок ставит несколько фишек крупного номинала и не объявляет действие, это считается рейзом. Если игрок увеличивает ставку одной фишкой, он обязан озвучить размер ставки.",
+        question: "Что означает несколько крупных фишек без объявления действия?",
+        options: ["Колл", "Рейз", "Автопас"],
+        correct: 1,
+      },
+      {
+        title: "Первая ставка одной фишкой",
+        description: "Если игрок делает первый бет одной фишкой и не объявляет сумму, ставка принимается на полную сумму этой фишки.",
+        question: "Как принимается первая ставка одной фишкой без объявления?",
+        options: ["Как минимальный бет", "На полную сумму фишки", "Как чек"],
+        correct: 1,
+      },
+    ],
+  };
+
+  let disputeIndex = 0;
+  let disputeCategory = "redeals";
+
+  function currentDisputeLessons() {
+    return DISPUTE_LESSONS_BY_CATEGORY[disputeCategory];
+  }
+
+  function startDisputeLessons() {
+    disputeCategory = "redeals";
+    disputeIndex = 0;
+    showScreen("learningDisputes");
+    renderDisputeLesson();
+  }
+
+  function switchDisputeCategory(category) {
+    disputeCategory = category;
+    disputeIndex = 0;
+    Object.entries(disputeTabButtons).forEach(([key, button]) => {
+      button.classList.toggle("active", key === category);
+      button.classList.toggle("btn-primary", key === category);
+      button.classList.toggle("btn-secondary", key !== category);
+    });
+    renderDisputeLesson();
+  }
+
+  function renderDisputeLesson() {
+    const lessons = currentDisputeLessons();
+    const lesson = lessons[disputeIndex];
+    disputesProgressEl.textContent = `Ситуация ${disputeIndex + 1} из ${lessons.length}`;
+    disputesTitleEl.textContent = lesson.title;
+    disputesDescriptionEl.textContent = lesson.description;
+    disputesQuestionEl.textContent = lesson.question;
+    disputesOptionsEl.innerHTML = "";
+    disputesFeedbackEl.classList.add("hidden");
+    disputesFeedbackEl.classList.remove("ok", "bad");
+    disputesNextEl.classList.add("hidden");
+    lesson.options.forEach((option, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-primary option";
+      button.textContent = option;
+      button.addEventListener("click", () => answerDispute(index, button));
+      disputesOptionsEl.appendChild(button);
+    });
+  }
+
+  function answerDispute(index, clickedButton) {
+    const lesson = currentDisputeLessons()[disputeIndex];
+    const buttons = [...disputesOptionsEl.querySelectorAll(".option")];
+    buttons.forEach((button) => {
+      button.disabled = true;
+    });
+    if (index === lesson.correct) {
+      clickedButton.classList.add("correct");
+      disputesFeedbackEl.textContent = "Верно!";
+      disputesFeedbackEl.classList.remove("hidden", "bad");
+      disputesFeedbackEl.classList.add("ok");
+    } else {
+      clickedButton.classList.add("wrong");
+      buttons[lesson.correct].classList.add("correct");
+      disputesFeedbackEl.textContent = `Неверно. Правильный ответ: ${lesson.options[lesson.correct]}`;
+      disputesFeedbackEl.classList.remove("hidden", "ok");
+      disputesFeedbackEl.classList.add("bad");
+    }
+    disputesNextEl.textContent = disputeIndex === currentDisputeLessons().length - 1
+      ? "Завершить обучение"
+      : "Следующий случай";
+    disputesNextEl.classList.remove("hidden");
+  }
+
+  function nextDisputeLesson() {
+    if (disputeIndex >= currentDisputeLessons().length - 1) {
+      showScreen("learningMenu");
+      return;
+    }
+    disputeIndex += 1;
+    renderDisputeLesson();
   }
 
   const WINNER_RANKS = [

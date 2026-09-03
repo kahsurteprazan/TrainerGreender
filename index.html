@@ -12,9 +12,9 @@
     <section id="screen-login" class="screen">
       <div class="card">
         <h1>Greender Trainer</h1>
-        <p class="subtitle">Привет! жду пароль:</p>
-        <input id="password-input" type="password" placeholder="Password" autocomplete="off" />
-        <p id="login-error" class="error hidden">Incorrect password!</p>
+        <p class="subtitle">Добро пожаловать! Введите пароль, чтобы начать обучение:</p>
+        <input id="password-input" type="password" placeholder="Пароль" autocomplete="off" />
+        <p id="login-error" class="error hidden">Неверный пароль!</p>
         <button id="login-btn" class="btn btn-primary" type="button">Войти</button>
       </div>
     </section>
@@ -22,15 +22,99 @@
     <section id="screen-menu" class="screen hidden">
       <div class="card">
         <h1>Главное меню</h1>
-        <button id="btn-trainer" class="btn btn-primary" type="button">Тренажер side pot-ов</button>
+        <button id="btn-trainer" class="btn btn-primary" type="button">Тренажер side потов</button>
         <button id="btn-winner-game" class="btn btn-primary" type="button">Определение победителя</button>
         <button id="btn-tests" class="btn btn-primary" type="button">Тесты</button>
         <button id="btn-exam" class="btn btn-primary" type="button">Экзамен</button>
-        <button id="btn-learn" class="btn btn-disabled" type="button" disabled>Обучение</button>
+        <button id="btn-learn" class="btn btn-primary" type="button">Обучение</button>
         <div class="menu-footer">
           <button id="btn-ideas" class="btn btn-secondary" type="button">💡 Идеи и предложения</button>
           <button id="btn-support" class="btn btn-secondary" type="button">💬 Поддержка</button>
         </div>
+      </div>
+    </section>
+
+    <section id="screen-learning-menu" class="screen hidden">
+      <div class="card">
+        <button id="btn-learning-menu-back" class="btn btn-ghost" type="button">Назад</button>
+        <h1>Обучение</h1>
+        <p class="subtitle">Выберите раздел обучения</p>
+        <button id="btn-learning-basics" class="btn btn-primary" type="button">База</button>
+        <button id="btn-learning-combinations" class="btn btn-primary" type="button">Комбинации</button>
+        <button id="btn-learning-deal" class="btn btn-primary" type="button">Схема раздачи</button>
+        <button id="btn-learning-disputes" class="btn btn-primary" type="button">Спорные моменты</button>
+      </div>
+    </section>
+
+    <section id="screen-learning-deal" class="screen hidden">
+      <div class="card learning-card">
+        <button id="btn-deal-back" class="btn btn-ghost" type="button">Назад</button>
+        <p id="deal-progress" class="meta"></p>
+        <h1 id="deal-title"></h1>
+        <p id="deal-description" class="subtitle"></p>
+        <div id="deal-scheme" class="deal-scheme hidden"></div>
+        <div id="deal-quiz">
+          <p id="deal-question" class="question"></p>
+          <div id="deal-options" class="options"></div>
+          <p id="deal-feedback" class="feedback hidden"></p>
+        </div>
+        <div id="deal-sort" class="deal-sort hidden">
+          <p id="deal-sort-hint" class="subtitle"></p>
+          <div id="deal-sort-items" class="deal-sort-items"></div>
+          <p id="deal-sort-feedback" class="feedback hidden"></p>
+        </div>
+        <button id="btn-deal-next" class="btn btn-primary hidden" type="button">Следующий урок</button>
+      </div>
+    </section>
+
+    <section id="screen-learning-disputes" class="screen hidden">
+      <div class="card learning-card">
+        <button id="btn-disputes-back" class="btn btn-ghost" type="button">Назад</button>
+        <div class="learning-tabs" role="tablist" aria-label="Категории спорных моментов">
+          <button id="btn-disputes-redeals" class="btn btn-primary learning-tab active" type="button">Перераздачи</button>
+          <button id="btn-disputes-dealer" class="btn btn-secondary learning-tab" type="button">Ошибки дилера</button>
+          <button id="btn-disputes-player" class="btn btn-secondary learning-tab" type="button">Ошибки игроков</button>
+        </div>
+        <p id="disputes-progress" class="meta"></p>
+        <h1 id="disputes-title"></h1>
+        <p id="disputes-description" class="subtitle"></p>
+        <div id="disputes-quiz">
+          <p id="disputes-question" class="question"></p>
+          <div id="disputes-options" class="options"></div>
+          <p id="disputes-feedback" class="feedback hidden"></p>
+        </div>
+        <button id="btn-disputes-next" class="btn btn-primary hidden" type="button">Следующий случай</button>
+      </div>
+    </section>
+
+    <section id="screen-learning-basics" class="screen hidden">
+      <div class="card learning-card">
+        <button id="btn-basics-back" class="btn btn-ghost" type="button">Назад</button>
+        <p id="basics-progress" class="meta"></p>
+        <h1 id="basics-title"></h1>
+        <p id="basics-description" class="subtitle"></p>
+        <div id="basics-quiz">
+          <p id="basics-question" class="question"></p>
+          <div id="basics-options" class="options"></div>
+          <p id="basics-feedback" class="feedback hidden"></p>
+        </div>
+        <button id="btn-basics-next" class="btn btn-primary hidden" type="button">Следующий урок</button>
+      </div>
+    </section>
+
+    <section id="screen-learning-combinations" class="screen hidden">
+      <div class="card learning-card">
+        <button id="btn-combinations-back" class="btn btn-ghost" type="button">Назад</button>
+        <p id="combination-progress" class="meta"></p>
+        <h1 id="combination-title"></h1>
+        <p id="combination-description" class="subtitle"></p>
+        <div id="combination-cards" class="learning-cards"></div>
+        <div id="combination-quiz">
+          <p id="combination-question" class="question"></p>
+          <div id="combination-options" class="options"></div>
+          <p id="combination-feedback" class="feedback hidden"></p>
+        </div>
+        <button id="btn-combination-next" class="btn btn-primary hidden" type="button">Следующая комбинация</button>
       </div>
     </section>
 

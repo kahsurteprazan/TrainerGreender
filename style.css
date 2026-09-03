@@ -521,3 +521,87 @@ input.shake {
     width: 42px;
   }
 }
+
+.learning-card {
+  gap: 12px;
+}
+
+.learning-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.learning-tab {
+  padding: 10px 6px;
+  font-size: 13px;
+  box-shadow: none;
+}
+
+.learning-cards {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  min-height: 130px;
+}
+
+.learning-card-image {
+  width: 58px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+@media (max-width: 380px) {
+  .learning-card-image {
+    width: 52px;
+  }
+}
+
+.deal-scheme {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.deal-scheme-step,
+.deal-sort-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(51, 65, 85, 0.72);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.deal-scheme-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #2563eb;
+  font-weight: 700;
+}
+
+.deal-sort-items {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.deal-sort-item {
+  cursor: grab;
+  touch-action: none;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.deal-sort-item.dragging {
+  opacity: 0.45;
+}
