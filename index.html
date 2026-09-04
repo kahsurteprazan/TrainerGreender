@@ -22,10 +22,28 @@
     <section id="screen-menu" class="screen hidden">
       <div class="card">
         <h1>Главное меню</h1>
-        <button id="btn-trainer" class="btn btn-primary" type="button">Тренажер side потов</button>
-        <button id="btn-winner-game" class="btn btn-primary" type="button">Определение победителя</button>
-        <button id="btn-learn" class="btn btn-primary" type="button">Обучение</button>
-        <button id="btn-exam" class="btn btn-exam" type="button">Экзамен</button>
+        <div class="main-menu-grid">
+          <button id="btn-trainer" class="btn btn-primary menu-tile" type="button">
+            <span class="menu-tile-icon">♣</span>
+            <span class="menu-tile-label">Сайд-поты</span>
+            <span class="menu-tile-detail">тренажёр</span>
+          </button>
+          <button id="btn-winner-game" class="btn btn-primary menu-tile" type="button">
+            <span class="menu-tile-icon">♠</span>
+            <span class="menu-tile-label">Победитель</span>
+            <span class="menu-tile-detail">определение руки</span>
+          </button>
+          <button id="btn-learn" class="btn btn-primary menu-tile" type="button">
+            <span class="menu-tile-icon">♦</span>
+            <span class="menu-tile-label">Обучение</span>
+            <span class="menu-tile-detail">база дилера</span>
+          </button>
+          <button id="btn-exam" class="btn btn-exam menu-tile" type="button">
+            <span class="menu-tile-icon">★</span>
+            <span class="menu-tile-label">Экзамен</span>
+            <span class="menu-tile-detail">скоро</span>
+          </button>
+        </div>
         <div class="menu-footer">
           <button id="btn-ideas" class="btn btn-secondary" type="button">💡 Идеи и предложения</button>
           <button id="btn-support" class="btn btn-secondary" type="button">💬 Поддержка</button>
@@ -131,8 +149,18 @@
         <button id="btn-trainer-back" class="btn btn-ghost" type="button">Назад</button>
         <h1>Режим тренажера</h1>
         <p class="subtitle">Выберите формат тренировки сайд-потов</p>
-        <button id="btn-mode-timed" class="btn btn-primary btn-mode" type="button">На время (15 сек)</button>
-        <button id="btn-mode-untimed" class="btn btn-primary btn-mode" type="button">Без времени</button>
+        <div class="mode-grid">
+          <button id="btn-mode-timed" class="btn btn-primary btn-mode" type="button">
+            <span class="mode-icon">15</span>
+            <span class="mode-label">На время</span>
+            <span class="mode-detail">секунд</span>
+          </button>
+          <button id="btn-mode-untimed" class="btn btn-primary btn-mode" type="button">
+            <span class="mode-icon mode-infinity">∞</span>
+            <span class="mode-label">Без времени</span>
+            <span class="mode-detail">спокойный режим</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -181,8 +209,18 @@
         <button id="btn-winner-menu-back" class="btn btn-ghost" type="button">Назад</button>
         <h1>Определение победителя</h1>
         <p class="subtitle">Texas Hold'em: выберите всех игроков с лучшей комбинацией</p>
-        <button id="btn-winner-timed" class="btn btn-primary btn-mode" type="button">На время (5 сек)</button>
-        <button id="btn-winner-untimed" class="btn btn-primary btn-mode" type="button">Без времени</button>
+        <div class="mode-grid">
+          <button id="btn-winner-timed" class="btn btn-primary btn-mode" type="button">
+            <span class="mode-icon">5</span>
+            <span class="mode-label">На время</span>
+            <span class="mode-detail">секунд</span>
+          </button>
+          <button id="btn-winner-untimed" class="btn btn-primary btn-mode" type="button">
+            <span class="mode-icon mode-infinity">∞</span>
+            <span class="mode-label">Без времени</span>
+            <span class="mode-detail">спокойный режим</span>
+          </button>
+        </div>
       </div>
     </section>
 
