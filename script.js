@@ -305,7 +305,6 @@
     resetWinnerGame();
     showScreen("winnerMenu");
   });
-  document.getElementById("btn-tests").addEventListener("click", startTests);
   document.getElementById("btn-exam").addEventListener("click", () => {
     resetGame();
     showScreen("exam");

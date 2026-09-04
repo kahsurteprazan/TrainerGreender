@@ -196,6 +196,15 @@ input.shake {
   background: #2563eb;
 }
 
+.btn-exam {
+  background: #dc2626;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
+}
+
+.btn-exam:hover {
+  filter: brightness(1.08);
+}
+
 .btn-primary:hover {
   filter: brightness(1.08);
 }
