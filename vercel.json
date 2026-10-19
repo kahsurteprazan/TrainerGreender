@@ -16,7 +16,8 @@
     },
     {
       "src": "/(server|supabase|tests|scripts)(/.*)?",
-      "status": 404
+      "status": 404,
+      "dest": "/api/not-found"
     },
     {
       "handle": "filesystem"
