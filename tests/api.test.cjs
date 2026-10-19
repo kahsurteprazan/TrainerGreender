@@ -35,3 +35,13 @@ test('RPC composite response works as array or object',async()=>{
   assert.equal((await db('rpc/request_access',{method:'POST',body:{}})).id,'request-2');
  }finally{global.fetch=original;}
 });
+test('new Supabase secret keys use apikey without invalid JWT Authorization',async()=>{
+ const original=global.fetch,key=process.env.SUPABASE_SERVICE_ROLE_KEY;const {db}=require('../server/core.cjs');let headers;
+ try{
+  global.fetch=async(_,options)=>{headers=options.headers;return{ok:true,text:async()=>'[]'};};
+  process.env.SUPABASE_SERVICE_ROLE_KEY='sb_secret_test-only';await db('profiles');
+  assert.equal(headers.apikey,'sb_secret_test-only');assert.equal(headers.Authorization,undefined);
+  process.env.SUPABASE_SERVICE_ROLE_KEY='legacy-test-key';await db('profiles');
+  assert.equal(headers.Authorization,'Bearer legacy-test-key');
+ }finally{global.fetch=original;process.env.SUPABASE_SERVICE_ROLE_KEY=key;}
+});

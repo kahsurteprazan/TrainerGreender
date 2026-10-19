@@ -8,7 +8,7 @@ function config() {
 }
 async function db(path,{method='GET',body,prefer}={}) {
  const env=config();
- const r=await fetch(env.SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/'+path,{method,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',Prefer:prefer||'return=representation'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(12000)});
+ const r=await fetch(env.SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/'+path,{method,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,...(env.SUPABASE_SERVICE_ROLE_KEY.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY}),'Content-Type':'application/json',Prefer:prefer||'return=representation'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(12000)});
  const text=await r.text(); const value=text?JSON.parse(text):null;
  if(!r.ok) { const e=new Error(r.status<500&&value?.code==='P0001'?value.message:'Ошибка базы данных. Попробуйте ещё раз'); e.status=400; throw e; }
  return path.startsWith('rpc/') && Array.isArray(value) ? value[0] : value;
