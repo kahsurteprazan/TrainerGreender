@@ -27,6 +27,7 @@ const assert=require('node:assert/strict'),{randomUUID:uuid}=require('node:crypt
  // Published club-specific section and unread new lesson prevent admission.
  await complete(5);ok((await cmd(5,'get')).readiness.eligible);await db.query("update learning_progress set completed_at=now() where user_id=5");const lesson=(await db.query('select id from learning_lessons limit 1')).rows[0].id;await db.query('delete from learning_progress where user_id=5 and lesson_id=$1',[lesson]);ok(!(await cmd(5,'get')).readiness.eligible);await reject(()=>grant(5,3));await db.query('insert into learning_progress(user_id,lesson_id) values(5,$1)',[lesson]);await grant(5,3);
  await db.query('update memberships set enabled=false where user_id=5');await reject(()=>start(5));await db.query('update memberships set enabled=true where user_id=5');d=await start(5);await cmd(5,'enter');ok((await current(5)).reason==='interrupted');
+ await grant(5,3);d=await start(5);await db.query("update exam_attempts set status='oral',cursor=30 where id=$1",[d.attempt.id]);await db.query('update memberships set team_id=$1 where user_id=5',[ta.id]);d=await cmd(2,'get',{userId:5});ok(d.attempt.status==='failed'&&d.attempt.reason==='access_changed');
  await db.exec('set role anon');await reject(()=>db.query('select * from exam_attempts'));await reject(()=>db.query("select exam_command(4,1,'get','{}')"));await reject(()=>db.query('select exam_state(4,1,2)'));await db.exec('reset role');
  console.log('Exam PostgreSQL:',n,'checks passed.');
  }finally{await db.close();}
