@@ -780,3 +780,6 @@ input.shake {
 #platform-panel label { display:block; line-height:1.6; }
 .platform-item { padding:14px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
 #panel-message { color:var(--gold-soft); }
+
+.form-feedback { margin:8px 0; padding:12px; border:1px solid var(--green); border-radius:10px; color:var(--text); line-height:1.5; overflow-wrap:anywhere; }
+.form-feedback.is-error, #panel-message.is-error { border-color:var(--red); color:#ffb5bd; }

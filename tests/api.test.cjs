@@ -45,3 +45,21 @@ test('new Supabase secret keys use apikey without invalid JWT Authorization',asy
   assert.equal(headers.Authorization,'Bearer legacy-test-key');
  }finally{global.fetch=original;process.env.SUPABASE_SERVICE_ROLE_KEY=key;}
 });
+test('trainer invitations require owner and notify the intended account only',async()=>{
+ const original=global.fetch;let failTelegram=false;const sent=[];
+ global.fetch=async(url,options)=>{
+  if(url.includes('api.telegram.org')){sent.push(JSON.parse(options.body));return{json:async()=>({ok:!failTelegram,result:true})};}
+  let value=[];
+  if(url.includes('/profiles?telegram_id=eq.')){const id=url.split('eq.')[1];value=[{telegram_id:Number(id),display_name:'User',blocked:false}];}
+  return{ok:true,status:200,text:async()=>JSON.stringify(value)};
+ };
+ try{
+  let r=await call({action:'inviteTrainer',trainerId:'42'});assert.equal(r.statusCode,403);assert.equal(sent.length,0);
+  r=await call({action:'inviteTrainer',trainerId:'random'},{id:'1'});assert.equal(r.statusCode,400);assert.equal(sent.length,0);
+  r=await call({action:'inviteTrainer',trainerId:'1'},{id:'1'});assert.equal(r.statusCode,400);assert.equal(sent.length,0);
+  r=await call({action:'inviteTrainer',trainerId:'42'},{id:'1'});assert.equal(r.statusCode,200);assert.match(r.value.notice,/Приглашение отправлено/);
+  assert.equal(sent[0].chat_id,42);assert.equal(sent[0].reply_markup.inline_keyboard[0][0].web_app.url,'https://example.com');
+  assert.match(sent[0].text,/не выдаёт доступ/);
+  failTelegram=true;r=await call({action:'inviteTrainer',trainerId:'43'},{id:'1'});assert.equal(r.statusCode,400);assert.match(r.value.error,/сначала открыть/);
+ }finally{global.fetch=original;}
+});
