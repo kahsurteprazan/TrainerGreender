@@ -25,6 +25,6 @@ module.exports=async(req,res)=>{
   }
   const info=await c.telegram('getWebhookInfo',{});
   const menu=await c.telegram('getChatMenuButton',{});
-  return c.json(res,200,{ok:true,action,botUsername:me.username,webhookConfigured:!!info.url,webhookMatches:info.url===webhookUrl,pendingUpdates:info.pending_update_count||0,lastErrorDate:info.last_error_date||null,menuMatches:menu.type==='web_app'&&menu.web_app?.url===env.APP_URL});
+  return c.json(res,200,{ok:true,action,botUsername:me.username,webhookConfigured:!!info.url,webhookMatches:info.url===webhookUrl,pendingUpdates:info.pending_update_count||0,lastErrorDate:info.last_error_date||null,menuMatches:menu.type==='web_app'&&!!menu.web_app?.url&&new URL(menu.web_app.url).href===app.href});
  }catch{return c.json(res,502,{error:'Bot setup failed'});}
 };

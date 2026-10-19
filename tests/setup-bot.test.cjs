@@ -5,7 +5,7 @@ function req(action='connect',extra={}){const expiry=Math.floor(Date.now()/1000)
 function res(){return{setHeader(){},end(s){this.value=JSON.parse(s);}};}
 test('bot setup requires signed short-lived POST and only changes preview bot endpoints',async()=>{
  const old=c.telegram,calls=[];
- c.telegram=async(method,body)=>{calls.push({method,body});if(method==='getMe')return{username:'GreenderTrainerBot'};if(method==='getWebhookInfo')return{url:'https://test.example/api/telegram',pending_update_count:0};if(method==='getChatMenuButton')return{type:'web_app',web_app:{url:'https://test.example'}};return true;};
+ c.telegram=async(method,body)=>{calls.push({method,body});if(method==='getMe')return{username:'GreenderTrainerBot'};if(method==='getWebhookInfo')return{url:'https://test.example/api/telegram',pending_update_count:0};if(method==='getChatMenuButton')return{type:'web_app',web_app:{url:'https://test.example/'}};return true;};
  try{
   let r=res();process.env.VERCEL_ENV='production';await handler(req(),r);assert.equal(r.statusCode,404);process.env.VERCEL_ENV='preview';
   r=res();await handler({...req(),method:'GET'},r);assert.equal(r.statusCode,405);
