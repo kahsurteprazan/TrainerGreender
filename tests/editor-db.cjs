@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),{randomUUID:uuid}=require('node:crypto'),{PGlite}=require('@electric-sql/pglite');
-(async()=>{const db=new PGlite();let checks=0;await db.exec('create role anon;create role authenticated;create role service_role bypassrls;');for(const f of ['001_initial.sql','002_member_management.sql','003_learning.sql','004_content_editor.sql'])await db.exec(fs.readFileSync('supabase/'+f,'utf8'));
+(async()=>{const db=new PGlite();let checks=0;await db.exec('create role anon;create role authenticated;create role service_role bypassrls;');for(const f of ['001_initial.sql','002_member_management.sql','003_learning.sql','004_content_editor.sql','005_learning_resume.sql'])await db.exec(fs.readFileSync('supabase/'+f,'utf8'));
  await db.exec("insert into profiles(telegram_id,display_name) values(1,'Owner'),(2,'Trainer A'),(3,'Trainer B'),(4,'Student A'),(5,'Student B');");
  const ca=(await db.query("insert into clubs(name) values('A') returning id")).rows[0].id,cb=(await db.query("insert into clubs(name) values('B') returning id")).rows[0].id;
  const ta=(await db.query("select * from create_team(1,$1,'A',2)",[ca])).rows[0],tb=(await db.query("select * from create_team(1,$1,'B',3)",[cb])).rows[0];await db.query('insert into memberships(user_id,team_id) values(4,$1),(5,$2)',[ta.id,tb.id]);
@@ -16,12 +16,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),{randomUUID:uui
  let safe=await cmd(4,'get');assert(!JSON.stringify(safe).includes('correctIndex'));assert(!JSON.stringify(safe).includes('Вопрос?'));checks++;
  await cmd(4,'complete',{lessonId:lid});const at=(await cmd(4,'start',{sectionId:sid})).activeAttempt;assert.equal(at.questions.length,1);checks++;
  await edit('save','question',qid,{lessonId:lid,prompt:'Изменённый?',options:['Нет','Да'],correctIndex:1});await edit('archive','question',qid);
+ const later=uuid();await edit('save','lesson',later,{sectionId:sid,title:'Добавлен во время теста',theory:'Новый материал'});await edit('publish','lesson',later);
+ const resumed=(await cmd(4,'start',{sectionId:sid})).activeAttempt;assert.equal(resumed.id,at.id);assert.equal(resumed.questions.length,1);checks++;
  let r=await cmd(4,'submit',{attemptId:at.id,answers:{[qid]:0}});assert(r.result.passed);assert.equal(r.result.score,1);checks++;
  const lid2=uuid();await edit('save','lesson',lid2,{sectionId:sid,title:'Новый урок',theory:'Новая теория'});await edit('publish','lesson',lid2);safe=await cmd(4,'get');assert(safe.attempts.some(a=>a.passed&&a.sectionId===sid));assert(!safe.progress.some(p=>p.lessonId===lid2));checks++;
  await edit('archive','lesson',lid);safe=await cmd(4,'get');assert(!safe.sections.find(s=>s.id===sid).lessons.some(l=>l.id===lid));assert(safe.progress.some(p=>p.lessonId===lid));assert(safe.attempts.some(a=>a.id===at.id&&a.passed));checks++;
  await reject(()=>edit('delete','lesson',lid));await reject(()=>edit('delete','section',sid));await reject(()=>edit('delete','question',qid));
  await edit('restore','lesson',lid);a=await edit('get');assert(!a.lessons.find(l=>l.id===lid).archived);assert(!a.lessons.find(l=>l.id===lid).published);checks++;await edit('publish','lesson',lid);
- await edit('move','lesson',lid2,{direction:'up'});a=await edit('get');assert.deepEqual(a.lessons.filter(l=>l.sectionId===sid).map(l=>l.id),[lid2,lid]);checks++;
+ await edit('move','lesson',lid2,{direction:'up'});a=await edit('get');assert.deepEqual(a.lessons.filter(l=>l.sectionId===sid).map(l=>l.id),[lid,lid2,later]);checks++;
  await edit('archive','section',sid);assert(!(await cmd(4,'get')).sections.some(s=>s.id===sid));checks++;await reject(()=>cmd(4,'complete',{lessonId:lid2}));await edit('restore','section',sid);assert(!(await cmd(4,'get')).sections.some(s=>s.id===sid));checks++;
  await edit('restore','question',qid);await edit('publish','question',qid);await edit('publish','section',sid);assert((await cmd(4,'get')).sections.some(s=>s.id===sid));checks++;
  const draftSection=uuid(),draftLesson=uuid(),draftQuestion=uuid();await edit('save','section',draftSection,{title:'Черновик'});await edit('save','lesson',draftLesson,{sectionId:draftSection,title:'Черновик урока',theory:'Текст'});await edit('save','question',draftQuestion,{lessonId:draftLesson,prompt:'Да?',options:['Да','Нет'],correctIndex:0});await edit('delete','section',draftSection);a=await edit('get');assert(!a.sections.some(s=>s.id===draftSection));assert(!a.lessons.some(l=>l.id===draftLesson));assert(!a.questions.some(q=>q.id===draftQuestion));checks++;
