@@ -6,7 +6,8 @@
     "test": "node --test tests/*.test.cjs",
     "start": "node server/dev.cjs",
     "test:db": "node tests/db-integration.cjs",
-    "test:ui": "node tests/ui-smoke.cjs"
+    "test:ui": "node tests/ui-smoke.cjs",
+    "test:loading": "node tests/loading-ui.cjs"
   },
   "engines": {
     "node": ">=22"

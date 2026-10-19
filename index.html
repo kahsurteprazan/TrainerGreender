@@ -12,6 +12,7 @@
     <span id="platform-identity"></span>
     <button id="platform-manage" class="btn btn-secondary" type="button">Моя команда</button>
   </div>
+  <div id="platform-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="platform-panel" class="hidden"></div>
   <div id="app">
     <section id="screen-login" class="screen">
@@ -19,6 +20,11 @@
         <h1>Greender Trainer</h1>
         <p class="subtitle">Вход через Telegram. Доступ к команде подтверждает тренер.</p>
         <p id="platform-message" class="subtitle" role="status">Проверяем вход…</p>
+        <div id="login-skeleton" class="login-skeleton hidden" aria-hidden="true">
+          <div class="skeleton-line skeleton-heading"></div>
+          <div class="skeleton-line skeleton-copy"></div>
+          <div class="skeleton-tiles"><div class="skeleton-tile"></div><div class="skeleton-tile"></div></div>
+        </div>
         <button id="platform-login" class="btn btn-primary" type="button">Повторить вход</button>
       </div>
     </section>
