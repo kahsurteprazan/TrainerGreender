@@ -914,3 +914,22 @@ input.shake {
 #platform-panel textarea {display:block;width:100%;min-height:200px;resize:vertical;padding:12px;border:1px solid #42614d;border-radius:10px;background:#061b12;color:#fffaf0;font:inherit;line-height:1.6;}
 #platform-panel .btn-primary {background:#157b59;}
 @media(max-width:640px){.study-shell .management-header .btn {width:100%;}.lesson-body {padding:20px;}.study-overview {gap:20px;padding:20px;}.study-overview strong {font-size:25px;}.quiz-choice {padding:14px;}.quiz-choice.selected {padding:13px;}.quiz-question h2 {font-size:21px!important;}.result-score {font-size:48px;}.study-shell .entity-card h3 {font-size:21px!important;}}
+
+/* Content authoring: owner-only, drafts and archive are explicit. */
+.content-buttons,.content-filter,.content-order {display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.content-filter{margin:16px 0 24px;}
+.content-section-head{padding:16px 0;display:grid;gap:12px;}
+.content-item{align-items:flex-start!important;gap:16px;}
+.content-item-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.content-order .btn{min-width:44px;min-height:44px;padding:8px 14px;}
+.content-actions{margin-top:24px;}
+.content-actions .status-badge{margin:8px 0;}
+.content-options{border:1px solid #426453;border-radius:12px;padding:16px;min-width:0;}
+.content-options legend{padding:0 8px;font-weight:700;}
+.content-option{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;align-items:end;margin-top:16px;}
+#platform-panel .correct-choice{display:flex;align-items:center;gap:8px;min-height:48px;}
+#platform-panel .correct-choice input{width:20px;min-height:20px;height:20px;margin:0;accent-color:#67c99b;}
+.content-item .person-info{min-width:0;overflow-wrap:anywhere;}
+@media(max-width:600px){.content-item{flex-direction:column!important;}.content-item-actions{flex-direction:row;align-items:center;justify-content:space-between;width:100%;}.content-buttons>.btn{flex:1 1 145px;}.content-option{grid-template-columns:1fr;gap:4px;}.content-options{padding:12px;}}
+#platform-panel .btn[data-operation="delete"]{background:#4b2529;color:#ffd5d5;border-color:#a96b72;}
+#platform-panel textarea[name="description"],#platform-panel textarea[name="prompt"]{min-height:108px;}

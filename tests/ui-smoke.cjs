@@ -10,7 +10,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://telegram.org/**',r=>r.abort());await page.addInitScript(()=>{window.Telegram={WebApp:{initData:'mock',ready(){},expand(){}}};});
   await page.route('**/api/app',r=>r.fulfill({json:state}));
-  await page.route('**/api/learning',r=>r.fulfill({json:{userId:4,sections:[],progress:[],attempts:[],grants:[]}}));
+  await page.route('**/api/learning',r=>r.fulfill({json:r.request().postDataJSON().action==='learnManageGet'?{editor:{sections:[],lessons:[],questions:[]}}:{userId:4,sections:[],progress:[],attempts:[],grants:[]}}));
   await page.route('**/api/trainer',r=>{
    let src=fs.readFileSync(path.join(__dirname,'../server/trainer-source.txt'),'utf8');
    src=src.replace('  resetGame();\n  resetWinnerGame();\n  showScreen("menu");\n})();','  window.__qa={startWinnerGame,finishWinnerSuccess,finishWinnerError,nextWinnerDeal,resetWinnerGame,stopWinnerTimer,getCount:()=>winnerSolvedCount,stop:()=>{stopWinnerTimer();clearTimeout(winnerAutoNextId);},startTrainer,checkAnswer,getTask:()=>currentTask,getSolved:()=>solvedCount};\n  resetGame();\n  resetWinnerGame();\n  showScreen("menu");\n})();');

@@ -9,7 +9,9 @@
     "test:ui": "node tests/ui-smoke.cjs",
     "test:loading": "node tests/loading-ui.cjs",
     "test:learning:db": "node tests/learning-db.cjs",
-    "test:learning:ui": "node tests/learning-ui.cjs"
+    "test:learning:ui": "node tests/learning-ui.cjs",
+    "test:editor:db": "node tests/editor-db.cjs",
+    "test:editor:ui": "node tests/editor-ui.cjs"
   },
   "engines": {
     "node": ">=22"
