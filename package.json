@@ -7,7 +7,9 @@
     "start": "node server/dev.cjs",
     "test:db": "node tests/db-integration.cjs",
     "test:ui": "node tests/ui-smoke.cjs",
-    "test:loading": "node tests/loading-ui.cjs"
+    "test:loading": "node tests/loading-ui.cjs",
+    "test:learning:db": "node tests/learning-db.cjs",
+    "test:learning:ui": "node tests/learning-ui.cjs"
   },
   "engines": {
     "node": ">=22"

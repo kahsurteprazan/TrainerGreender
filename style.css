@@ -890,3 +890,27 @@ input.shake {
 .sr-only {position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
 #platform-login.btn-primary {background:#157b59;border:1px solid #369e76;color:#fff;box-shadow:none;}
 @media(prefers-reduced-motion:reduce){#screen-login {animation:none!important;}}
+
+/* Saved learning: common lesson and assessment UI. */
+.study-shell {max-width:900px;margin:auto;}
+.study-caption {margin:20px 0 24px;max-width:720px;}
+.study-overview {display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px;border:1px solid #325343;background:#0b281e;border-radius:12px;}
+.study-overview>div {display:flex;flex-direction:column;gap:8px;}.study-overview strong {font-size:28px;}
+.study-shell progress,.study-overview progress {width:100%;height:8px;border:0;border-radius:8px;accent-color:#6ec595;background:#1c3d2c;}
+.study-overview progress {grid-column:1/-1;}.study-shell progress::-webkit-progress-bar {background:#1c3d2c;border-radius:8px;}.study-shell progress::-webkit-progress-value {background:#6ec595;border-radius:8px;}
+.study-test-gate {margin-top:24px;}.lesson-number {font-size:14px;color:#a0bfae;font-variant-numeric:tabular-nums;}
+.lesson-body {max-width:740px;margin:auto;gap:24px;}.lesson-theory {font-size:17px;line-height:1.7;}.lesson-theory p+p {margin-top:16px;}
+.lesson-video {display:block;width:100%;aspect-ratio:16/9;background:#06170f;border:1px solid #315440;border-radius:10px;overflow:hidden;}.lesson-video iframe {display:block;width:100%;height:100%;border:0;}
+.video-link {display:grid;gap:12px;padding:16px;border:1px solid #315440;border-radius:10px;}.video-link a {text-decoration:none;display:block;text-align:center;}
+.study-cards {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-width:400px;margin:0 auto;width:100%;}.study-cards img {width:100%;height:auto;border-radius:5px;}
+.lesson-steps {padding-left:24px;display:grid;gap:10px;line-height:1.5;}.lesson-steps li {padding-left:4px;}
+#lesson-end {height:1px;width:100%;}
+.study-skeleton {display:grid;gap:16px;padding:24px 0;max-width:720px;}.study-skeleton .skeleton-tile {height:130px;}
+.quiz-question {max-width:740px;margin:24px auto;gap:24px;}.quiz-options {display:grid;gap:12px;}
+.quiz-choice {display:flex;align-items:center;gap:12px;text-align:left;padding:16px;min-height:52px;font:inherit;line-height:1.5;color:#e6f0e8;background:#0a2118;border:1px solid #43614c;border-radius:10px;cursor:pointer;}
+.quiz-choice.selected {border:2px solid #8dd9ad;background:#17452f;padding:15px;}.quiz-choice:focus-visible {outline:2px solid #f5d98b;outline-offset:3px;}
+.choice-mark {display:flex;align-items:center;justify-content:center;min-width:28px;height:28px;border:1px solid #577564;border-radius:6px;font-size:14px;}.quiz-choice.selected .choice-mark {background:#b5e8c6;color:#102e1d;border-color:#b5e8c6;}
+.quiz-navigation {display:flex;justify-content:space-between;gap:12px;}.result-surface {max-width:640px;margin:24px auto;}.result-score {font-size:56px;font-weight:700;line-height:1.15;color:#f5d98b;}.result-score span {font-size:28px;color:#b4c9bd;}
+#platform-panel textarea {display:block;width:100%;min-height:200px;resize:vertical;padding:12px;border:1px solid #42614d;border-radius:10px;background:#061b12;color:#fffaf0;font:inherit;line-height:1.6;}
+#platform-panel .btn-primary {background:#157b59;}
+@media(max-width:640px){.study-shell .management-header .btn {width:100%;}.lesson-body {padding:20px;}.study-overview {gap:20px;padding:20px;}.study-overview strong {font-size:25px;}.quiz-choice {padding:14px;}.quiz-choice.selected {padding:13px;}.quiz-question h2 {font-size:21px!important;}.result-score {font-size:48px;}.study-shell .entity-card h3 {font-size:21px!important;}}

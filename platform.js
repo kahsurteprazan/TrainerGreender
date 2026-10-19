@@ -14,7 +14,7 @@
  async function api(action,data={}) {
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
   try{
-   const r=await fetch('/api/app',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data}),signal:controller.signal});
+   const r=await fetch(action.startsWith('learn')?'/api/learning':'/api/app',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data}),signal:controller.signal});
    let value;try{value=await r.json();}catch{throw apiError('Сервер вернул неполный ответ. Попробуйте проверить данные ещё раз.',r.status,true);}
    if(!r.ok)throw apiError(r.status>=500?'Сервер временно недоступен. Попробуйте позже.':value.error||'Не удалось выполнить запрос',r.status,r.status>=500);
    return value;
@@ -45,6 +45,8 @@
   else showPanel(true);
  }
  let view={screen:'home',tab:'students'};
+ const learningUI=window.createLearningUI({api,perform,getCurrent:()=>current,getView:()=>view,setView:v=>{view=v;},renderPanel,showPanel});
+ document.addEventListener('click',e=>{if(e.target.closest('#btn-learn')){e.preventDefault();e.stopImmediatePropagation();if(!busy)learningUI.open();}},true);
  const person=id=>current.people.find(p=>String(p.telegram_id)===String(id))||(String(current.user.telegram_id)===String(id)?current.user:null);
  const personName=id=>person(id)?.display_name||'Участник · '+id;
  const button=(label,action,attrs='',kind='secondary')=>'<button type="button" class="btn btn-'+kind+'" data-action="'+action+'" '+attrs+'>'+label+'</button>';
@@ -55,6 +57,7 @@
  const date=v=>v?new Date(v).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Пока нет данных';
  function placeholder(title,text){return '<section class="preview-block"><div class="section-top"><h3>'+title+'</h3>'+badge('Скоро','muted')+'</div><p>'+text+'</p><div class="preview-line"></div><span class="subtle">Данные ещё не собираются</span></section>';}
  function renderPanel(){
+  if(learningUI.handles(view.screen)){$('platform-panel').innerHTML=learningUI.render();learningUI.afterRender();return;}
   const s=current,owner=s.role==='owner',manager=owner||s.role==='trainer';
   const club=s.clubs.find(c=>c.id===view.id),team=s.teams.find(t=>t.id===(view.teamId||view.id));
   const member=s.memberships.find(m=>String(m.user_id)===String(view.id));
@@ -87,10 +90,10 @@
     html+='<div class="section-tabs">'+[['learning','Обучение'],['training','Тренажёры'],['access','Доступ']].map(([tab,label])=>button(label,'tab','data-tab="'+tab+'"',view.tab===tab?'primary':'secondary')).join('')+'</div>';
     if(view.tab==='access')html+='<section class="surface"><h3>Управление доступом</h3><p class="subtle">Приостановка оставляет ученика в команде. Удаление из команды сохраняет аккаунт и историю; для возвращения потребуется новая заявка.</p>'+button(member.enabled===false?'Возобновить доступ':'Приостановить доступ','member','data-id="'+member.user_id+'" data-team="'+member.team_id+'" data-operation="'+(member.enabled===false?'resume':'pause')+'"','primary')+button('Убрать из команды','confirm','data-kind="remove" data-id="'+member.user_id+'" data-team="'+member.team_id+'"','danger')+(owner?button(p?.blocked?'Разблокировать аккаунт':'Заблокировать аккаунт','confirm','data-kind="block" data-id="'+member.user_id+'" data-blocked="'+!p?.blocked+'"'):'')+'</section>';
     else if(view.tab==='training')html+='<div class="preview-notice">Макет статистики. Результаты тренировок пока не записываются.</div><div class="preview-grid">'+placeholder('Сайд-поты','Здесь появятся лучший счёт, сложность и история попыток.')+placeholder('Победитель','Здесь будут правильные ответы, рекорд и результаты режима на время.')+'</div>';
-    else html+='<div class="preview-notice">Предпросмотр карточки: это структура будущей статистики, не результаты ученика.</div><div class="preview-grid">'+placeholder('Прогресс обучения','Пройденные уроки и разделы: видео → теория → тест.')+placeholder('Тесты по разделам','Результат, две попытки и выдача дополнительных попыток тренером.')+placeholder('Экзамен','Условия допуска, статус и результат итоговой проверки.')+'</div>';
+    else html+=learningUI.renderStudent(member.user_id)+placeholder('Экзамен','Условия допуска и итоговая проверка — следующий этап.');
    }else if(view.screen==='requests')html+='<div class="page-heading"><h2>Заявки на вступление</h2></div>'+requests(s.requests);
    else if(view.screen==='people')html+='<div class="page-heading"><div><h2>Пользователи</h2><p class="subtle">Все зарегистрированные аккаунты. Состав учеников — внутри команд.</p></div>'+go('Пригласить тренера','inviteTrainer','','primary')+'</div><label class="search-label">Найти человека<input id="people-search" type="search" placeholder="Имя, @username или Telegram ID"></label><div class="people-list">'+s.people.map(p=>'<div class="person-row searchable" data-search="'+escape((p.display_name+' '+(p.username||'')+' '+p.telegram_id).toLowerCase())+'"><div class="person-info"><strong>'+escape(p.display_name)+'</strong><span>'+escape(p.username?'@'+p.username:'ID: '+p.telegram_id)+' · '+(String(p.telegram_id)===String(s.user.telegram_id)?'Владелец':s.teams.some(t=>String(t.trainer_id)===String(p.telegram_id))?'Тренер':s.memberships.some(m=>String(m.user_id)===String(p.telegram_id))?'Ученик':'Без команды')+'</span></div>'+(String(p.telegram_id)!==String(s.user.telegram_id)?button(p.blocked?'Разблокировать':'Заблокировать','confirm','data-kind="block" data-id="'+p.telegram_id+'" data-blocked="'+!p.blocked+'"'):'')+'</div>').join('')+'</div>';
-   else if(view.screen==='learning')html+='<div class="page-heading"><h2>Управление обучением</h2></div>'+placeholder('Общие и клубные материалы','Здесь будет редактор видеоуроков, теории и тестов. Редактирование доступно только владельцу.');
+   else if(view.screen==='learning')html+=learningUI.renderManager();
    else if(view.screen==='newClub')html+=go('← К клубам','home')+'<section class="surface form-surface"><h2>Новый клуб</h2><form data-form="club"><label>Название клуба<input name="name" placeholder="Например, Grinder" maxlength="100" required></label><button class="btn btn-primary">Создать клуб</button></form></section>';
    else if(view.screen==='inviteTrainer')html+=go('← Пользователи','people')+'<section class="surface form-surface"><h2>Пригласить будущего тренера</h2><p class="subtle">Человек сначала запускает @'+escape(s.botUsername)+'. После приглашения он открывает «Зарегистрироваться», а вы назначаете его в новую команду.</p><form data-form="trainerInvite"><label>Telegram ID будущего тренера<input name="trainerId" inputmode="numeric" pattern="[1-9][0-9]{0,15}" placeholder="Настоящий числовой ID" required></label><button class="btn btn-primary">Отправить приглашение</button></form></section>';
    else if(view.screen==='newTeam'){
@@ -101,7 +104,7 @@
    const m=s.memberships[0],t=s.teams[0];
    html+='<section class="surface"><h2>'+escape(t?.name||'Ожидаем доступ')+'</h2><p class="subtle">'+(s.allowed?'Вы в команде. Тренажёры доступны по кнопке сверху.':m?.enabled===false?'Ваш доступ приостановлен тренером.':t?'Доступ команды или клуба приостановлен. Обратитесь к тренеру.':s.requests.some(r=>r.status==='pending')?'Заявка отправлена. Дождитесь решения тренера.':'Для вступления откройте ссылку-приглашение тренера.')+'</p><p class="subtle">Ваш Telegram ID: '+escape(s.user.telegram_id)+'</p>';
    if(!m){const code=new URLSearchParams(location.search).get('invite')||tg?.initDataUnsafe?.start_param;if(code&&/^[a-f0-9]{48}$/.test(code)&&!s.requests.some(r=>r.status==='pending'))html+=button('Подать заявку тренеру','request','data-code="'+escape(code)+'"','primary');for(const r of s.requests)html+='<p>Заявка: '+escape({pending:'ожидает решения',approved:'ранее одобрена; сейчас вы не в команде',rejected:'отклонена'}[r.status])+'</p>';}
-   html+='</section>';if(m)html+='<div class="preview-notice">Предпросмотр будущего личного прогресса. Данные ещё не собираются.</div><div class="preview-grid">'+placeholder('Моё обучение','Пройденные уроки, тесты и оставшиеся попытки.')+placeholder('Мои тренировки','Личный рекорд и история результатов появятся после подключения статистики.')+'</div>';
+   html+='</section>';if(m)html+=learningUI.renderProfile()+placeholder('Мои тренировки','Личный рекорд и история результатов появятся после подключения статистики.');
   }
   $('platform-panel').innerHTML=html+'</div><dialog id="management-confirm"><h2 id="confirm-title"></h2><p id="confirm-description"></p><div class="row-actions">'+button('Отмена','cancelConfirm')+button('Подтвердить','executeConfirm','','danger')+'</div></dialog>';
  }
@@ -147,7 +150,7 @@
    const mutation=context.mutation;
    const uncertain=mutation&&(e.uncertain||!e.status);
    const text=e.message+(uncertain?' Изменение могло сохраниться. Сначала проверьте состояние, чтобы не отправить его дважды.':'');
-   const retry=e.status===401||e.status===403?null:mutation?{label:'Проверить состояние',run:b=>perform(()=>api('state'),{trigger:b,preserveForms:true,loadingText:'Проверяем состояние…',successText:'Данные обновлены. Проверьте, сохранилось ли действие, прежде чем отправлять его повторно.'})}:{label:'Повторить',run:b=>perform(fn,{...context,trigger:b})};
+   const retry=e.status===401||e.status===403?null:mutation?{label:'Проверить состояние',run:b=>perform(context.reconcile||(()=>api('state')),{trigger:b,preserveForms:true,loadingText:'Проверяем состояние…',successText:'Данные обновлены. Проверьте, сохранилось ли действие, прежде чем отправлять его повторно.'})}:{label:'Повторить',run:b=>perform(fn,{...context,trigger:b})};
    feedback(text,context,true,retry);
   }finally{
    clearTimeout(slow);busy=false;if($('platform-announcement'))$('platform-announcement').textContent='';panel.removeAttribute('aria-busy');$('request-status')?.classList.add('hidden');
@@ -158,11 +161,11 @@
  let confirmation;
  $('platform-panel').addEventListener('input',e=>{if(e.target.id==='people-search'){const q=e.target.value.toLowerCase().trim();document.querySelectorAll('.searchable').forEach(el=>el.hidden=!el.dataset.search.includes(q));}});
  $('platform-panel').addEventListener('click',e=>{
-  const b=e.target.closest('[data-action]');if(!b||busy)return;const d=b.dataset;
+  const b=e.target.closest('[data-action]');if(!b||busy)return;if(learningUI.onClick(b,e))return;const d=b.dataset;
   if(d.action==='retry')return lastRetry?.(b);
   if(d.action==='train'){if(loaded)return showPanel(false);return perform(()=>api('state'),{trigger:b,preserveForms:true,openPanel:false,loadingText:'Загружаем тренажёры…'});}
-  if(d.action==='navigate'){view={screen:d.screen,id:d.id,teamId:d.team,tab:d.screen==='student'?'learning':'students'};renderPanel();window.scrollTo({top:0});return;}
-  if(d.action==='tab'){view.tab=d.tab;renderPanel();return;}
+  if(d.action==='navigate'){view={screen:d.screen,id:d.id,teamId:d.team,tab:d.screen==='student'?'learning':'students'};renderPanel();learningUI.ensureView();window.scrollTo({top:0});return;}
+  if(d.action==='tab'){view.tab=d.tab;renderPanel();learningUI.ensureView();return;}
   if(d.action==='copyInvite'){const t=current.teams.find(t=>t.id===d.id),url='https://t.me/'+current.botUsername+'?start='+t.invite_code;return (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>feedback('Ссылка скопирована')).catch(()=>feedback('Выделите и скопируйте ссылку из поля'));}
   if(d.action==='confirm'){confirmation={...d};$('confirm-title').textContent=d.kind==='remove'?'Убрать ученика из команды?':d.blocked==='true'?'Заблокировать аккаунт?':'Разблокировать аккаунт?';$('confirm-description').textContent=d.kind==='remove'?'Аккаунт и история сохранятся. Для возвращения ученик сможет подать новую заявку.':d.blocked==='true'?'Будет закрыт доступ ко всей платформе. Состав команды сохранится.':'Глобальная блокировка будет снята. Доступ также зависит от команды и клуба.';$('management-confirm').showModal();return;}
   if(d.action==='cancelConfirm')return $('management-confirm').close();
@@ -176,7 +179,7 @@
   },{trigger:b,mutation:d.action!=='refresh',preserveForms:d.action==='refresh'});
  });
  $('platform-panel').addEventListener('submit',e=>{
-  e.preventDefault();const f=e.target,data=Object.fromEntries(new FormData(f));
+  e.preventDefault();const f=e.target;if(learningUI.onSubmit(f,e))return;const data=Object.fromEntries(new FormData(f));
   const action={club:'createClub',trainerInvite:'inviteTrainer',team:'createTeam',clubAccess:'setClub'}[f.dataset.form];
   perform(()=>api(action,f.dataset.form==='clubAccess'?{...data,enabled:f.elements.enabled.checked}:data),{form:f.dataset.form,recordId:data.id,trigger:e.submitter||f.querySelector('button'),mutation:true,loadingText:({club:'Создаём клуб…',team:'Создаём команду…',trainerInvite:'Отправляем приглашение…',clubAccess:'Сохраняем настройки…'})[f.dataset.form]});
  });

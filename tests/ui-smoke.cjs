@@ -10,6 +10,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://telegram.org/**',r=>r.abort());await page.addInitScript(()=>{window.Telegram={WebApp:{initData:'mock',ready(){},expand(){}}};});
   await page.route('**/api/app',r=>r.fulfill({json:state}));
+  await page.route('**/api/learning',r=>r.fulfill({json:{userId:4,sections:[],progress:[],attempts:[],grants:[]}}));
   await page.route('**/api/trainer',r=>{
    let src=fs.readFileSync(path.join(__dirname,'../server/trainer-source.txt'),'utf8');
    src=src.replace('  resetGame();\n  resetWinnerGame();\n  showScreen("menu");\n})();','  window.__qa={startWinnerGame,finishWinnerSuccess,finishWinnerError,nextWinnerDeal,resetWinnerGame,stopWinnerTimer,getCount:()=>winnerSolvedCount,stop:()=>{stopWinnerTimer();clearTimeout(winnerAutoNextId);},startTrainer,checkAnswer,getTask:()=>currentTask,getSolved:()=>solvedCount};\n  resetGame();\n  resetWinnerGame();\n  showScreen("menu");\n})();');
@@ -30,7 +31,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.click('#platform-manage');await page.getByRole('heading',{name:'Управление платформой'}).waitFor();assert.equal(await page.locator('form').count(),0);checks++;await snapshot(page,'owner-clubs');
   await page.locator('.entity-card').click();await page.getByRole('heading',{name:'Grinder',exact:true}).waitFor();await snapshot(page,'club');
   await page.locator('.entity-card').click();await page.getByRole('heading',{name:'Вечерняя группа',exact:true}).waitFor();assert.match(await page.locator('.page-heading').textContent(),/Алексей/);checks++;await snapshot(page,'team');
-  await page.locator('.person-link').click();await page.getByRole('heading',{name:'Михаил Соколов',exact:true}).waitFor();assert.match(await page.locator('.preview-notice').textContent(),/не результаты/);checks++;await snapshot(page,'student-learning');
+  await page.locator('.person-link').click();await page.getByRole('heading',{name:'Михаил Соколов',exact:true}).waitFor();await page.getByRole('heading',{name:'Прогресс обучения'}).waitFor();checks++;await snapshot(page,'student-learning');
   await page.getByRole('button',{name:'Тренажёры',exact:true}).click();await snapshot(page,'student-training');
   await page.getByRole('button',{name:'Доступ',exact:true}).click();await snapshot(page,'student-access');
   let live=structuredClone(base);const actions=[];
