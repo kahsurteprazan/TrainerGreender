@@ -768,3 +768,15 @@ input.shake {
 .deal-sort-item.dragging {
   opacity: 0.45;
 }
+
+/* Platform controls reuse the existing training UI. */
+#platform-bar, #platform-panel { max-width:480px; margin:0 auto; padding:12px 16px; }
+#platform-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+#platform-bar .btn { width:auto; margin:0; padding:10px 14px; }
+#platform-panel h2 { margin:24px 0 12px; }
+#platform-panel form { display:grid; gap:10px; }
+#platform-panel input, #platform-panel select { width:100%; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--text); font:inherit; }
+#platform-panel input[type=checkbox] { width:auto; }
+#platform-panel label { display:block; line-height:1.6; }
+.platform-item { padding:14px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+#panel-message { color:var(--gold-soft); }

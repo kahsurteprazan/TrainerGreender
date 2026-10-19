@@ -1,0 +1,38 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {PGlite}=require(process.env.PGLITE_MODULE||'@electric-sql/pglite');
+(async()=>{
+ const pg=new PGlite();let checks=0;
+ await pg.exec('create role anon; create role authenticated; create role service_role bypassrls;');
+ await pg.exec(fs.readFileSync(path.join(__dirname,'../supabase/001_initial.sql'),'utf8'));checks++;
+ await pg.exec("insert into profiles(telegram_id,display_name) values (1,'Owner'),(2,'Trainer A'),(3,'Trainer B'),(4,'Student'),(5,'Other'),(6,'Blocked'); update profiles set blocked=true where telegram_id=6;");
+ const club=(await pg.query("insert into clubs(name) values ('Club') returning id")).rows[0].id;
+ const teamA=(await pg.query("select * from public.create_team(1,$1,'A',2)",[club])).rows[0];
+ const teamB=(await pg.query("select * from public.create_team(1,$1,'B',3)",[club])).rows[0];
+ assert.equal(teamA.invite_code.length,48);checks++;
+ const request=(await pg.query('select * from public.request_access(4,$1)',[teamA.invite_code])).rows[0];
+ const repeat=(await pg.query('select * from public.request_access(4,$1)',[teamA.invite_code])).rows[0];assert.equal(request.id,repeat.id);checks++;
+ async function rejects(sql,args){await assert.rejects(()=>pg.query(sql,args));checks++;}
+ await rejects('select public.request_access(4,$1)',[teamB.invite_code]);
+ await rejects('select public.decide_request(3,1,$1,true)',[request.id]);
+ await pg.query('select public.decide_request(2,1,$1,true)',[request.id]);
+ assert.equal((await pg.query('select team_id from memberships where user_id=4')).rows[0].team_id,teamA.id);checks++;
+ await rejects('select public.decide_request(2,1,$1,true)',[request.id]);
+ await rejects('select public.request_access(4,$1)',[teamB.invite_code]);
+ await rejects('select public.request_access(2,$1)',[teamB.invite_code]);
+ await rejects('select public.request_access(6,$1)',[teamA.invite_code]);
+ await rejects("select public.create_team(1,$1,'Invalid',4)",[club]);
+ await rejects("select public.create_team(1,$1,'Invalid',99)",[club]);
+ const req2=(await pg.query('select * from public.request_access(5,$1)',[teamB.invite_code])).rows[0];
+ await pg.query('update clubs set enabled=false where id=$1',[club]);
+ await rejects('select public.decide_request(3,1,$1,true)',[req2.id]);
+ await pg.query('update clubs set enabled=true,access_until=now()-interval \'1 day\' where id=$1',[club]);
+ await rejects('select public.decide_request(3,1,$1,true)',[req2.id]);
+ await pg.exec('set role anon;');
+ await rejects('select * from profiles');
+ await rejects('select public.request_access(5,$1)',[teamA.invite_code]);
+ await pg.exec('reset role; set role authenticated;');
+ await rejects('select * from memberships');
+ await rejects('select public.decide_request(3,1,$1,true)',[req2.id]);
+ await pg.exec('reset role;');await pg.close();
+ console.log(`PostgreSQL integration: ${checks} checks passed (schema, membership, approvals, roles, RLS).`);
+})().catch(e=>{console.error(e);process.exit(1);});

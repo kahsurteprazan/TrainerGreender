@@ -8,14 +8,18 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="platform-bar" class="hidden">
+    <span id="platform-identity"></span>
+    <button id="platform-manage" class="btn btn-secondary" type="button">Моя команда</button>
+  </div>
+  <div id="platform-panel" class="hidden"></div>
   <div id="app">
     <section id="screen-login" class="screen">
       <div class="card">
         <h1>Greender Trainer</h1>
-        <p class="subtitle">Добро пожаловать! Введите пароль, чтобы начать обучение:</p>
-        <input id="password-input" type="password" placeholder="Пароль" autocomplete="off" />
-        <p id="login-error" class="error hidden">Неверный пароль!</p>
-        <button id="login-btn" class="btn btn-primary" type="button">Войти</button>
+        <p class="subtitle">Вход через Telegram. Доступ к команде подтверждает тренер.</p>
+        <p id="platform-message" class="subtitle" role="status">Проверяем вход…</p>
+        <button id="platform-login" class="btn btn-primary" type="button">Повторить вход</button>
       </div>
     </section>
 
@@ -279,6 +283,6 @@
       </div>
     </section>
   </div>
-  <script src="script.js"></script>
+  <script src="platform.js"></script>
 </body>
 </html>
