@@ -6,6 +6,7 @@
   <title>Greender Trainer</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="arena.css" />
 </head>
 <body>
   <div id="platform-bar" class="hidden">
@@ -158,7 +159,7 @@
       <div class="card">
         <button id="btn-trainer-back" class="btn btn-ghost" type="button">Назад</button>
         <h1>Режим тренажера</h1>
-        <p class="subtitle">Выберите формат тренировки сайд-потов</p>
+        <p class="subtitle">Собирай банки за покерным столом.</p><fieldset class="answer-format"><legend>Как отвечать</legend><label><input type="radio" name="answer-format" value="choice" checked> 4 варианта</label><label><input type="radio" name="answer-format" value="input"> Свой расчёт</label></fieldset>
         <div class="mode-grid">
           <button id="btn-mode-timed" class="btn btn-primary btn-mode" type="button">
             <span class="mode-icon">15</span>
@@ -186,31 +187,16 @@
     </section>
 
     <section id="screen-trainer" class="screen hidden">
-      <div class="card trainer-card">
-        <div class="trainer-top">
-          <button id="btn-trainer-to-menu" class="btn btn-ghost" type="button">Назад в меню</button>
-          <div id="lives" class="lives" aria-label="Жизни">
-            <span class="heart">❤️</span><span class="heart">❤️</span>
-          </div>
+      <div class="card trainer-card arena-card">
+        <header class="arena-header"><div><span class="arena-eyebrow">GREENDER · TABLE LAB</span><h1>Сайд-поты</h1><p id="arena-mode" class="arena-mode"></p></div><div class="arena-header-right"><div id="lives" class="lives" aria-label="Жизни"><span class="heart">❤️</span><span class="heart">❤️</span></div><button id="btn-finish-run" class="btn btn-ghost" type="button">Завершить</button></div></header>
+        <div id="timer" class="timer hidden"><div class="timer-track"><div class="timer-bar"></div></div><span class="timer-value">15</span></div>
+        <div class="arena-grid">
+          <div class="arena-table-area"><div class="arena-round"><p id="question-meta" class="meta">Раздача 1</p><span id="arena-score">0 решено</span></div><div id="task-text" class="task arena-task"></div></div>
+          <div class="arena-answer-area"><span class="arena-eyebrow">ТВОЁ РЕШЕНИЕ</span><h2 id="question-text" class="question"></h2><p class="arena-answer-hint" id="answer-mode-hint"></p><div id="answer-choices" class="pot-choices"></div><div id="manual-answer" class="hidden"><label class="arena-input-label" for="answer-input">Размер банка<input id="answer-input" type="number" inputmode="numeric" min="0" step="100" placeholder="0" /></label><div id="pot-keypad" class="pot-keypad" aria-label="Цифровая клавиатура"></div></div><p id="feedback" class="feedback hidden" role="status" aria-live="polite"></p><button id="btn-check" class="btn btn-primary" type="button">Проверить</button><button id="btn-next" class="btn btn-primary hidden" type="button">Следующая раздача →</button><div id="pot-review" class="hidden"></div></div>
         </div>
-        <div id="timer" class="timer hidden">
-          <div class="timer-track">
-            <div class="timer-bar"></div>
-          </div>
-          <span class="timer-value">15</span>
-        </div>
-        <p id="question-meta" class="meta">Вопрос 1</p>
-        <div id="task-text" class="task"></div>
-        <p id="question-text" class="question"></p>
-        <input id="answer-input" type="number" inputmode="numeric" placeholder="Введите сумму" />
-        <p id="feedback" class="feedback hidden"></p>
-        <button id="btn-check" class="btn btn-primary" type="button">Проверить</button>
-        <button id="btn-next" class="btn btn-primary hidden" type="button">Следующий</button>
-        <div id="game-over" class="game-over hidden">
-          <h2>Игра окончена</h2>
-          <p id="final-score"></p>
-          <button id="btn-over-menu" class="btn btn-primary" type="button">В главное меню</button>
-        </div>
+        <div id="game-over" class="game-over arena-result hidden"><span class="arena-eyebrow">ЗАБЕГ ЗАВЕРШЁН</span><h2>Каждая раздача — опыт</h2><p id="final-score"></p><div id="arena-result-stats"></div><details id="arena-mistakes"><summary>Разобрать ошибки</summary><div id="arena-mistake-list"></div></details><p class="arena-result-note">Это пробная версия нового игрового вида. Результат пока не отправляется в общий рейтинг.</p><div class="arena-result-actions"><button id="btn-replay-run" class="btn btn-primary" type="button">Ещё забег ↗</button><button id="btn-over-menu" class="btn btn-secondary" type="button">В главное меню</button></div></div>
+        <div class="arena-sparks" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i></div>
+        <button id="btn-trainer-to-menu" class="btn btn-ghost arena-back" type="button">← К тренажёрам</button>
       </div>
     </section>
 
@@ -289,6 +275,8 @@
       </div>
     </section>
   </div>
+  <script src="table-ui.js"></script>
+  <script src="card-deck.js"></script>
   <script src="content-editor.js"></script>
   <script src="learning-ui.js"></script>
   <script src="platform.js"></script>

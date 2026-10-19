@@ -11,7 +11,8 @@
     "test:learning:db": "node tests/learning-db.cjs",
     "test:learning:ui": "node tests/learning-ui.cjs",
     "test:editor:db": "node tests/editor-db.cjs",
-    "test:editor:ui": "node tests/editor-ui.cjs"
+    "test:editor:ui": "node tests/editor-ui.cjs",
+    "test:arena": "node tests/arena-ui.cjs"
   },
   "engines": {
     "node": ">=22"

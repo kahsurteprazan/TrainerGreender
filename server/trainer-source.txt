@@ -100,6 +100,8 @@
   const combinationFeedbackEl = document.getElementById("combination-feedback");
   const combinationNextEl = document.getElementById("btn-combination-next");
 
+  const tableUI=window.GreenderTable;
+  let answerMode="choice",runStarted=0,runErrors=0,runBanks=0,runAttempts=0,runMistakes=[],timerDeadline=0;
   let timedMode = false;
   let difficulty = null;
   let lives = 2;
@@ -128,6 +130,7 @@
   let winnerTimerId = null;
   let winnerAutoNextId = null;
   let winnerTimeLeft = 5;
+  let winnerRenderToken=0,winnerDealing=false;
 
   function replayClass(el, className) {
     el.classList.remove(className);
@@ -185,6 +188,9 @@
     timeLeft = TIME_LIMIT;
     currentPotIndex = 0;
     correctAnswers = [];
+    runErrors=0;runBanks=0;runAttempts=0;runMistakes=[];runStarted=performance.now();
+    document.querySelector(".arena-card")?.classList.remove("arena-ended","arena-celebrate");
+    document.getElementById("pot-review")?.classList.add("hidden");
 
     answerInput.value = "";
     answerInput.disabled = false;
@@ -243,6 +249,8 @@
   }
 
   function resetWinnerGame() {
+    winnerRenderToken++;winnerDealing=false;
+    document.getElementById("btn-winner-next")?.classList.add("hidden");
     stopWinnerTimer();
     if (winnerAutoNextId) {
       clearTimeout(winnerAutoNextId);
@@ -261,6 +269,7 @@
     winnerTimerEl.classList.add("hidden");
     winnerTimerEl.classList.remove("warn", "running");
     winnerTimerEl.querySelector(".timer-value").textContent = "5";
+    document.getElementById("winner-combination-review")?.remove();
     winnerBoardEl.innerHTML = "";
     winnerPlayersEl.innerHTML = "";
     winnerFeedbackEl.classList.add("hidden");
@@ -504,23 +513,11 @@
   }
 
   function startTimer() {
-    stopTimer();
-    const valueEl = timerEl.querySelector(".timer-value");
-    if (!timedMode) {
-      timerEl.classList.add("hidden");
-      return;
-    }
-    timeLeft = TIME_LIMIT;
-    timerEl.classList.remove("hidden", "warn");
-    if (valueEl) valueEl.textContent = String(timeLeft);
-    void timerEl.offsetWidth;
-    timerEl.classList.add("running");
-    timerId = setInterval(() => {
-      timeLeft -= 1;
-      if (valueEl) valueEl.textContent = String(Math.max(timeLeft, 0));
-      if (timeLeft <= 5) timerEl.classList.add("warn");
-      if (timeLeft <= 0) onTimeout();
-    }, 1000);
+    stopTimer();const valueEl=timerEl.querySelector(".timer-value");
+    if(!timedMode){timerEl.classList.add("hidden");return;}
+    timeLeft=TIME_LIMIT;timerDeadline=performance.now()+TIME_LIMIT*1000;timerEl.classList.remove("hidden","warn");valueEl.textContent=String(TIME_LIMIT);
+    timerEl.querySelector(".timer-bar").style.width="100%";
+    timerId=setInterval(()=>{const remaining=Math.max(0,timerDeadline-performance.now());timeLeft=Math.ceil(remaining/1000);valueEl.textContent=String(timeLeft);timerEl.querySelector(".timer-bar").style.width=(remaining/(TIME_LIMIT*1000)*100)+"%";timerEl.classList.toggle("warn",timeLeft<=5);if(remaining<=0)onTimeout();},100);
   }
 
   function setPlayingUi() {
@@ -533,18 +530,29 @@
     btnCheck.classList.remove("hidden");
     btnNext.classList.add("hidden");
     gameOverEl.classList.add("hidden");
+    document.getElementById("pot-review").classList.add("hidden");
+    taskTextEl.classList.remove("pots-revealed");document.querySelectorAll("#pot-keypad button").forEach(b=>b.disabled=false);
   }
 
   function startTrainer(selectedDifficulty) {
     resetGameState();
     difficulty = selectedDifficulty;
+    answerMode=document.querySelector('input[name="answer-format"]:checked')?.value||"choice";
     showScreen("trainer");
     nextQuestion(true);
   }
 
   function updateQuestionPrompt() {
     const question = currentTask.questions[currentPotIndex];
-    questionTextEl.textContent = question.prompt;
+    questionTextEl.textContent = question.prompt.replace(/^Введите размер /,"Каков размер ").replace(/:$/,"?");
+    questionMetaEl.textContent=`Раздача ${questionNumber} · банк ${currentPotIndex+1}/${currentTask.questions.length}`;
+    document.getElementById("arena-score").textContent=`${solvedCount} решено`;
+    document.getElementById("answer-mode-hint").textContent=answerMode==="choice"?"Выбери точную сумму. Стопки фишек условные — считай по подписям.":"Рассчитай сумму самостоятельно. Можно использовать клавиатуру ниже.";
+    document.getElementById("manual-answer").classList.toggle("hidden",answerMode!=="input");
+    const options=document.getElementById("answer-choices");options.classList.toggle("hidden",answerMode!=="choice");options.innerHTML="";
+    if(answerMode==="choice")tableUI.choices(question.answer,currentTask.bets,currentPotIndex).forEach((amount,i)=>{const b=document.createElement("button");b.type="button";b.className="pot-choice";b.innerHTML='<span class="choice-letter">'+String.fromCharCode(65+i)+'</span><strong>'+tableUI.fmt(amount)+'</strong>';b.dataset.amount=String(amount);b.addEventListener("click",()=>{if(answered||gameOver)return;answerInput.value=String(amount);checkAnswer();});options.append(b);});
+    btnCheck.classList.toggle("hidden",answerMode!=="input");
+    document.getElementById("arena-mode").textContent=(timedMode?"15 секунд на банк":"Без спешки")+" · "+({easy:"Лёгкий",medium:"Средний",hard:"Сложный"}[difficulty]||"")+" · "+(answerMode==="choice"?"4 варианта":"Свой расчёт");
   }
 
   function nextQuestion(isStart) {
@@ -557,107 +565,50 @@
     correctAnswers = currentTask.questions.map((q) => q.answer);
     currentPotIndex = 0;
     setPlayingUi();
-    questionMetaEl.textContent = `Вопрос ${questionNumber}`;
-    taskTextEl.textContent = describeBets(currentTask.bets);
+    questionMetaEl.textContent = `Раздача ${questionNumber}`;
+    taskTextEl.innerHTML = tableUI.renderTable(currentTask.bets);
     updateQuestionPrompt();
     startTimer();
-    answerInput.focus();
+
   }
 
-  function applyError(message) {
-    lives -= 1;
-    renderLives();
-    feedbackEl.classList.remove("hidden", "ok");
-    feedbackEl.classList.add("bad");
-    feedbackEl.textContent = message;
-
-    if (lives <= 0) {
-      endGame();
-      return false;
-    }
-    return true;
-  }
-
+  function haptic(kind){try{tg?.HapticFeedback?.notificationOccurred(kind);}catch{}}
+  function revealPots(){const panel=document.getElementById("pot-review");panel.innerHTML=tableUI.review(currentTask.bets);panel.classList.remove("hidden");taskTextEl.classList.add("pots-revealed");}
+  function lockAnswers(){answerInput.disabled=true;btnCheck.classList.add("hidden");document.querySelectorAll(".pot-choice,#pot-keypad button").forEach(b=>b.disabled=true);}
   function endGame() {
-    gameOver = true;
-    stopPending();
-    answered = true;
-    answerInput.disabled = true;
-    btnCheck.classList.add("hidden");
-    btnNext.classList.add("hidden");
-    gameOverEl.classList.remove("hidden");
-    finalScoreEl.textContent = `Пройдено вопросов: ${solvedCount}`;
+    if(gameOver)return;gameOver=true;stopPending();answered=true;lockAnswers();btnNext.classList.add("hidden");
+    document.querySelector(".arena-card").classList.add("arena-ended");gameOverEl.classList.remove("hidden");
+    finalScoreEl.innerHTML='<strong class="arena-final-number">'+solvedCount+'</strong><span>раздач решено полностью</span>';
+    const secs=Math.max(0,Math.round((performance.now()-runStarted)/1000)),accuracy=runAttempts?Math.round(runBanks/runAttempts*100):0;
+    document.getElementById("arena-result-stats").innerHTML='<div><strong>'+runBanks+'</strong><span>верных банков</span></div><div><strong>'+runErrors+'</strong><span>ошибок</span></div><div><strong>'+accuracy+'%</strong><span>точность ответов</span></div><div><strong>'+Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')+'</strong><span>в тренажёре</span></div>';
+    const details=document.getElementById("arena-mistakes");details.open=false;details.classList.toggle("hidden",!runMistakes.length);
+    document.getElementById("arena-mistake-list").innerHTML=runMistakes.map((m,i)=>'<article class="arena-mistake"><h3>Раздача '+m.round+' · '+(m.timeout?'Время вышло':'Ошибка')+'</h3><p>'+tableUI.esc(m.prompt)+'</p><p class="arena-mistake-answer">'+(m.timeout?'Без ответа':'Твой ответ: '+tableUI.fmt(m.answer))+' · Правильно: '+tableUI.fmt(m.expected)+'</p><p>'+m.bets.map((b,i)=>'Игрок '+(i+1)+': '+tableUI.fmt(b)).join(' · ')+'</p>'+tableUI.review(m.bets)+'</article>').join('');
+    gameOverEl.scrollIntoView({block:"start",behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   }
-
-  function onTimeout() {
-    stopTimer();
-    if (answered || gameOver) return;
-    answered = true;
-    replayClass(answerInput, "flash-bad");
-    replayClass(answerInput, "shake");
-    const expectedAnswer = currentTask.questions[currentPotIndex].answer;
-    const stillAlive = applyError(`Время вышло! Правильный ответ: ${formatMoney(expectedAnswer)}`);
-    answerInput.disabled = true;
-    btnCheck.classList.add("hidden");
-    if (stillAlive) {
-      autoNextId = setTimeout(() => nextQuestion(false), 1200);
-    }
+  function failRound(timeout,value){
+    answered=true;stopTimer();lockAnswers();runErrors++;runAttempts++;lives--;renderLives();
+    const q=currentTask.questions[currentPotIndex];runMistakes.push({round:questionNumber,bets:currentTask.bets.slice(),prompt:q.prompt,answer:value,expected:q.answer,timeout});
+    feedbackEl.classList.remove("hidden","ok");feedbackEl.classList.add("bad");feedbackEl.textContent=(timeout?'Время вышло. ':'Не совсем. ')+'Правильный ответ: '+tableUI.fmt(q.answer)+'. Ниже — разбор.';
+    document.querySelectorAll('.pot-choice').forEach(b=>{if(Number(b.dataset.amount)===q.answer)b.classList.add('correct');else if(Number(b.dataset.amount)===value)b.classList.add('wrong');});
+    haptic('error');revealPots();if(lives<=0)endGame();else btnNext.classList.remove("hidden");
   }
-
-  function checkAnswer() {
-    if (answered || gameOver) return;
-    const raw = answerInput.value.trim();
-    if (raw === "") return;
-    const value = Number(raw);
-    if (!Number.isFinite(value)) return;
-
-    stopTimer();
-    answered = true;
-    answerInput.disabled = true;
-    btnCheck.classList.add("hidden");
-
-    const expectedAnswer = currentTask.questions[currentPotIndex].answer;
-
-    if (value === expectedAnswer) {
-      currentPotIndex += 1;
-      if (currentPotIndex >= currentTask.questions.length) {
-        solvedCount += 1;
-        replayClass(answerInput, "flash-ok");
-        feedbackEl.classList.remove("hidden", "bad");
-        feedbackEl.classList.add("ok");
-        feedbackEl.textContent = "Верно! Все потов посчитаны.";
-        btnNext.classList.remove("hidden");
-      } else {
-        replayClass(answerInput, "flash-ok");
-        feedbackEl.classList.remove("hidden", "bad");
-        feedbackEl.classList.add("ok");
-        feedbackEl.textContent = "Верно! Следующий пот:";
-        answered = false;
-        answerInput.disabled = false;
-        answerInput.value = "";
-        answerInput.classList.remove("flash-ok", "flash-bad");
-        feedbackEl.classList.add("hidden");
-        btnCheck.classList.remove("hidden");
-        updateQuestionPrompt();
-        startTimer();
-        answerInput.focus();
-      }
-    } else {
-      replayClass(answerInput, "flash-bad");
-      replayClass(answerInput, "shake");
-      const stillAlive = applyError("Неверно!");
-      if (stillAlive) {
-        answered = false;
-        answerInput.disabled = false;
-        answerInput.value = "";
-        answerInput.classList.remove("flash-bad", "shake");
-        feedbackEl.classList.add("hidden");
-        btnCheck.classList.remove("hidden");
-        startTimer();
-        answerInput.focus();
-      }
-    }
+  function onTimeout(){if(answered||gameOver)return;failRound(true,null);}
+  function checkAnswer(){
+    if(answered||gameOver)return;
+    if(timedMode&&performance.now()>=timerDeadline){onTimeout();return;}
+    const raw=answerInput.value.trim();if(!/^\d+$/.test(raw))return;const value=Number(raw);if(!Number.isSafeInteger(value))return;
+    const expected=currentTask.questions[currentPotIndex].answer;
+    if(value!==expected){failRound(false,value);return;}
+    document.querySelectorAll('.pot-choice').forEach(b=>{if(Number(b.dataset.amount)===expected)b.classList.add('correct');});
+    stopTimer();answered=true;lockAnswers();runBanks++;runAttempts++;currentPotIndex++;haptic('success');
+    if(currentPotIndex>=currentTask.questions.length){solvedCount++;document.getElementById('arena-score').textContent=solvedCount+' решено';feedbackEl.classList.remove('hidden','bad');feedbackEl.classList.add('ok');feedbackEl.textContent='Чистая работа! Все нужные банки посчитаны.';btnNext.classList.remove('hidden');revealPots();replayClass(document.querySelector('.arena-card'),'arena-celebrate');}
+    else{answered=false;answerInput.disabled=false;answerInput.value='';feedbackEl.classList.remove('hidden','bad');feedbackEl.classList.add('ok');feedbackEl.textContent='Верно! Теперь следующий банк этой раздачи.';updateQuestionPrompt();document.querySelectorAll('#pot-keypad button').forEach(b=>b.disabled=false);startTimer();}
   }
+  document.getElementById('btn-finish-run').addEventListener('click',endGame);
+  document.getElementById('btn-replay-run').addEventListener('click',()=>startTrainer(difficulty));
+  document.getElementById('pot-keypad').innerHTML=['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k=>'<button type="button" data-key="'+k+'" aria-label="'+(k==='⌫'?'Стереть последнюю цифру':k==='C'?'Очистить ответ':k)+'">'+(k==='⌫'?'←':k)+'</button>').join('');
+  document.getElementById('pot-keypad').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||answered||gameOver)return;const key=b.dataset.key;if(key==='C')answerInput.value='';else if(key==='⌫')answerInput.value=answerInput.value.slice(0,-1);else if(answerInput.value.length<10)answerInput.value+=key;});
+  taskTextEl.addEventListener('click',e=>{const b=e.target.closest('[data-seat]');if(!b||!currentTask)return;taskTextEl.querySelectorAll('[data-seat]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));document.getElementById('table-seat-detail').textContent='Игрок '+(Number(b.dataset.seat)+1)+' · внёс '+tableUI.fmt(currentTask.bets[Number(b.dataset.seat)]);});
 
   const COMBINATION_LESSONS = [
     {
@@ -1439,11 +1390,7 @@
   ];
   const WINNER_SUITS = ["clubs", "diamonds", "hearts", "spades"];
 
-  function winnerCardImage(card) {
-    const rankImage = card.rank >= 11 ? card.label : String(card.rank);
-    const heartAceName = card.rank === 14 && card.suit === "hearts" ? "A__hearts.png" : `${rankImage}_${card.suit}.png`;
-    return `images/cards/${heartAceName}`;
-  }
+  function winnerCardImage(card){const rank=card.rank>=11?card.label:String(card.rank);return window.GreenderDeck.images[rank+'_'+card.suit];}
 
   function createWinnerDeck() {
     const deck = [];
@@ -1544,11 +1491,13 @@
     const image = document.createElement("img");
     image.className = "winner-card-image";
     image.src = winnerCardImage(card);
-    image.alt = `${card.label} ${card.suit}`;
+    image.dataset.cardId=card.id;image.width=240;image.height=334;image.decoding="async";
+    image.alt = `${card.label} ${{hearts:"черви",diamonds:"бубны",clubs:"трефы",spades:"пики"}[card.suit]}`;
     return image;
   }
 
   function renderWinnerDeal() {
+    document.getElementById("winner-combination-review")?.remove();
     winnerBoardEl.innerHTML = "";
     winnerPlayersEl.innerHTML = "";
     winnerDeal.board.forEach((card) => winnerBoardEl.appendChild(makeWinnerCardImage(card)));
@@ -1569,6 +1518,11 @@
       button.addEventListener("click", () => selectWinner(index, button));
       winnerPlayersEl.appendChild(button);
     });
+  }
+
+  function readyWinnerCards(){
+    const token=++winnerRenderToken;winnerDealing=true;winnerTimerEl.classList.add('hidden');winnerPlayersEl.querySelectorAll('button').forEach(b=>b.disabled=true);
+    Promise.all([...winnerBoardEl.querySelectorAll('img'),...winnerPlayersEl.querySelectorAll('img')].map(i=>i.decode().catch(()=>{}))).then(()=>setTimeout(()=>{if(token!==winnerRenderToken||winnerAnswered||winnerGameOver)return;winnerDealing=false;winnerPlayersEl.querySelectorAll('button').forEach(b=>b.disabled=false);startWinnerTimer();},matchMedia('(prefers-reduced-motion: reduce)').matches?0:400));
   }
 
   function startWinnerTimer() {
@@ -1608,11 +1562,14 @@
     if (wrong && clickedButton) clickedButton.classList.add("wrong");
   }
 
+  function showWinnerCombination(){
+    document.getElementById('winner-combination-review')?.remove();const panel=document.createElement('div');panel.id='winner-combination-review';panel.className='winner-combination-review';
+    const names=['Старшая карта','Пара','Две пары','Тройка','Стрит','Флеш','Фулл-хаус','Каре','Стрит-флеш'];
+    winnerDeal.winners.forEach(i=>{const p=winnerDeal.players[i],row=document.createElement('div');const label=document.createElement('strong');label.textContent=p.name+' · '+names[p.hand.score[0]];row.append(label);const cards=document.createElement('div');cards.className='winner-best-five';p.hand.cards.forEach(c=>cards.append(makeWinnerCardImage(c)));row.append(cards);panel.append(row);});winnerFeedbackEl.after(panel);
+  }
+
   function scheduleWinnerNext() {
-    winnerAutoNextId = setTimeout(() => {
-      winnerAutoNextId = null;
-      nextWinnerDeal();
-    }, 2500);
+    let next=document.getElementById('btn-winner-next');if(!next){next=document.createElement('button');next.type='button';next.id='btn-winner-next';next.className='btn btn-primary';next.textContent='Следующая раздача →';next.addEventListener('click',()=>nextWinnerDeal());winnerFeedbackEl.after(next);}next.classList.remove('hidden');
   }
 
   function finishWinnerSuccess() {
@@ -1623,6 +1580,7 @@
     winnerFeedbackEl.classList.remove("hidden", "bad");
     winnerFeedbackEl.classList.add("ok");
     winnerFeedbackEl.textContent = `Верно! ${winnerTitle()}: ${winnerNames()}`;
+    showWinnerCombination();
     scheduleWinnerNext();
   }
 
@@ -1635,6 +1593,7 @@
     winnerFeedbackEl.classList.remove("hidden", "ok");
     winnerFeedbackEl.classList.add("bad");
     winnerFeedbackEl.textContent = `${message} ${winnerTitle()}: ${winnerNames()}`;
+    showWinnerCombination();
     if (winnerLives <= 0) {
       winnerGameOver = true;
       winnerGameOverEl.classList.remove("hidden");
@@ -1645,7 +1604,7 @@
   }
 
   function selectWinner(index, button) {
-    if (winnerAnswered || winnerGameOver || winnerSelected.has(index)) return;
+    if (winnerDealing || winnerAnswered || winnerGameOver || winnerSelected.has(index)) return;
     winnerSelected.add(index);
     button.classList.add("selected");
     if (!winnerDeal.winners.includes(index)) {
@@ -1664,6 +1623,7 @@
 
   function nextWinnerDeal() {
     if (winnerGameOver) return;
+    document.getElementById("btn-winner-next")?.classList.add("hidden");
     winnerRound += 1;
     winnerDeal = createWinnerDeal();
     winnerSelected = new Set();
@@ -1673,7 +1633,7 @@
     winnerFeedbackEl.classList.remove("ok", "bad");
     winnerFeedbackEl.textContent = "";
     renderWinnerDeal();
-    startWinnerTimer();
+    readyWinnerCards();
   }
 
   function startWinnerGame() {
@@ -1685,7 +1645,7 @@
     winnerDeal = createWinnerDeal();
     winnerRoundEl.textContent = "Раздача 1";
     renderWinnerDeal();
-    startWinnerTimer();
+    readyWinnerCards();
   }
 
   const TEST_QUESTIONS = [
