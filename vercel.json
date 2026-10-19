@@ -5,33 +5,21 @@
       "maxDuration": 60
     }
   },
-  "headers": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/server/:path*",
-      "destination": "/api/not-found"
+      "src": "/.*",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+      },
+      "continue": true
     },
     {
-      "source": "/supabase/:path*",
-      "destination": "/api/not-found"
+      "src": "/(server|supabase|tests|scripts)(/.*)?",
+      "status": 404
     },
     {
-      "source": "/tests/:path*",
-      "destination": "/api/not-found"
+      "handle": "filesystem"
     }
   ]
 }
