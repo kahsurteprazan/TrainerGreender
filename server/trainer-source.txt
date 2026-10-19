@@ -29,6 +29,8 @@
   function showScreen(name) {
     Object.values(screens).forEach((el) => el.classList.add("hidden"));
     screens[name].classList.remove("hidden");
+    if(name==="trainerMenu")window.GreenderTraining?.menu("sidepots");
+    if(name==="winnerMenu")window.GreenderTraining?.menu("winner");
   }
 
   const livesEl = document.getElementById("lives");
@@ -130,7 +132,7 @@
   let winnerTimerId = null;
   let winnerAutoNextId = null;
   let winnerTimeLeft = 5;
-  let winnerRenderToken=0,winnerDealing=false;
+  let winnerRenderToken=0,winnerDealing=false,winnerDeadline=0;
 
   function replayClass(el, className) {
     el.classList.remove(className);
@@ -279,6 +281,7 @@
   }
 
   function goToMenu() {
+    window.GreenderTraining?.finish();
     resetGame();
     resetWinnerGame();
     showScreen("menu");
@@ -309,6 +312,7 @@
   document.getElementById("btn-over-menu").addEventListener("click", goToMenu);
   document.getElementById("btn-winner-menu-back").addEventListener("click", goToMenu);
   document.getElementById("btn-winner-game-back").addEventListener("click", () => {
+    window.GreenderTraining?.finish();
     resetWinnerGame();
     showScreen("winnerMenu");
   });
@@ -534,7 +538,9 @@
     taskTextEl.classList.remove("pots-revealed");document.querySelectorAll("#pot-keypad button").forEach(b=>b.disabled=false);
   }
 
-  function startTrainer(selectedDifficulty) {
+  async function startTrainer(selectedDifficulty) {
+    const format=document.querySelector('input[name="answer-format"]:checked')?.value||'choice';
+    if(window.GreenderTraining&&!await window.GreenderTraining.start({game:'sidepots',difficulty:selectedDifficulty,answerFormat:format,timed:timedMode}))return;
     resetGameState();
     difficulty = selectedDifficulty;
     answerMode=document.querySelector('input[name="answer-format"]:checked')?.value||"choice";
@@ -578,6 +584,8 @@
   function endGame() {
     if(gameOver)return;gameOver=true;stopPending();answered=true;lockAnswers();btnNext.classList.add("hidden");
     document.querySelector(".arena-card").classList.add("arena-ended");gameOverEl.classList.remove("hidden");
+    window.GreenderTraining?.finish({score:solvedCount,correct:runBanks,errors:runErrors,attempts:runAttempts});
+    document.querySelector('.arena-result-note').textContent=runAttempts?'Результат сохраняется в историю. В рейтинг идёт лучший забег на время; сложность и формат ответа учитываются отдельно.':'Без ответов забег не сохраняется. Начни новый, когда будешь готов.';
     finalScoreEl.innerHTML='<strong class="arena-final-number">'+solvedCount+'</strong><span>раздач решено полностью</span>';
     const secs=Math.max(0,Math.round((performance.now()-runStarted)/1000)),accuracy=runAttempts?Math.round(runBanks/runAttempts*100):0;
     document.getElementById("arena-result-stats").innerHTML='<div><strong>'+runBanks+'</strong><span>верных банков</span></div><div><strong>'+runErrors+'</strong><span>ошибок</span></div><div><strong>'+accuracy+'%</strong><span>точность ответов</span></div><div><strong>'+Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')+'</strong><span>в тренажёре</span></div>';
@@ -587,6 +595,7 @@
   }
   function failRound(timeout,value){
     answered=true;stopTimer();lockAnswers();runErrors++;runAttempts++;lives--;renderLives();
+    window.GreenderTraining?.track({score:solvedCount,correct:runBanks,errors:runErrors,attempts:runAttempts});
     const q=currentTask.questions[currentPotIndex];runMistakes.push({round:questionNumber,bets:currentTask.bets.slice(),prompt:q.prompt,answer:value,expected:q.answer,timeout});
     feedbackEl.classList.remove("hidden","ok");feedbackEl.classList.add("bad");feedbackEl.textContent=(timeout?'Время вышло. ':'Не совсем. ')+'Правильный ответ: '+tableUI.fmt(q.answer)+'. Ниже — разбор.';
     document.querySelectorAll('.pot-choice').forEach(b=>{if(Number(b.dataset.amount)===q.answer)b.classList.add('correct');else if(Number(b.dataset.amount)===value)b.classList.add('wrong');});
@@ -603,6 +612,7 @@
     stopTimer();answered=true;lockAnswers();runBanks++;runAttempts++;currentPotIndex++;haptic('success');
     if(currentPotIndex>=currentTask.questions.length){solvedCount++;document.getElementById('arena-score').textContent=solvedCount+' решено';feedbackEl.classList.remove('hidden','bad');feedbackEl.classList.add('ok');feedbackEl.textContent='Чистая работа! Все нужные банки посчитаны.';btnNext.classList.remove('hidden');revealPots();replayClass(document.querySelector('.arena-card'),'arena-celebrate');}
     else{answered=false;answerInput.disabled=false;answerInput.value='';feedbackEl.classList.remove('hidden','bad');feedbackEl.classList.add('ok');feedbackEl.textContent='Верно! Теперь следующий банк этой раздачи.';updateQuestionPrompt();document.querySelectorAll('#pot-keypad button').forEach(b=>b.disabled=false);startTimer();}
+    window.GreenderTraining?.track({score:solvedCount,correct:runBanks,errors:runErrors,attempts:runAttempts});
   }
   document.getElementById('btn-finish-run').addEventListener('click',endGame);
   document.getElementById('btn-replay-run').addEventListener('click',()=>startTrainer(difficulty));
@@ -1537,12 +1547,8 @@
     winnerTimerEl.classList.remove("hidden", "warn");
     void winnerTimerEl.offsetWidth;
     winnerTimerEl.classList.add("running");
-    winnerTimerId = setInterval(() => {
-      winnerTimeLeft -= 1;
-      valueEl.textContent = String(Math.max(winnerTimeLeft, 0));
-      if (winnerTimeLeft <= 2) winnerTimerEl.classList.add("warn");
-      if (winnerTimeLeft <= 0) onWinnerTimeout();
-    }, 1000);
+    winnerDeadline=performance.now()+5000;
+    winnerTimerId=setInterval(()=>{winnerTimeLeft=Math.ceil(Math.max(0,winnerDeadline-performance.now())/1000);valueEl.textContent=String(winnerTimeLeft);winnerTimerEl.classList.toggle('warn',winnerTimeLeft<=2);if(winnerTimeLeft<=0)onWinnerTimeout();},100);
   }
 
   function winnerNames() {
@@ -1574,6 +1580,7 @@
 
   function finishWinnerSuccess() {
     winnerSolvedCount += 1;
+    window.GreenderTraining?.track({score:winnerSolvedCount,correct:winnerSolvedCount,errors:2-winnerLives,attempts:winnerSolvedCount+2-winnerLives});
     winnerAnswered = true;
     stopWinnerTimer();
     revealWinnerButtons();
@@ -1588,6 +1595,7 @@
     winnerAnswered = true;
     stopWinnerTimer();
     winnerLives -= 1;
+    window.GreenderTraining?.track({score:winnerSolvedCount,correct:winnerSolvedCount,errors:2-winnerLives,attempts:winnerSolvedCount+2-winnerLives});
     renderWinnerLives();
     revealWinnerButtons(clickedButton, Boolean(clickedButton));
     winnerFeedbackEl.classList.remove("hidden", "ok");
@@ -1596,6 +1604,7 @@
     showWinnerCombination();
     if (winnerLives <= 0) {
       winnerGameOver = true;
+      window.GreenderTraining?.finish();
       winnerGameOverEl.classList.remove("hidden");
       winnerFinalScoreEl.textContent = `Правильных раздач: ${winnerSolvedCount}`;
     } else {
@@ -1605,6 +1614,7 @@
 
   function selectWinner(index, button) {
     if (winnerDealing || winnerAnswered || winnerGameOver || winnerSelected.has(index)) return;
+    if(winnerTimedMode&&performance.now()>=winnerDeadline){onWinnerTimeout();return;}
     winnerSelected.add(index);
     button.classList.add("selected");
     if (!winnerDeal.winners.includes(index)) {
@@ -1636,8 +1646,9 @@
     readyWinnerCards();
   }
 
-  function startWinnerGame() {
+  async function startWinnerGame() {
     const mode = winnerTimedMode;
+    if(window.GreenderTraining&&!await window.GreenderTraining.start({game:'winner',difficulty:'standard',answerFormat:'selection',timed:mode}))return;
     resetWinnerGame();
     winnerTimedMode = mode;
     winnerGameOver = false;
@@ -1753,6 +1764,10 @@
     testResultEl.classList.remove("hidden");
     testScoreEl.textContent = `Вы ответили правильно на ${testScore} из ${TEST_QUESTIONS.length} вопросов`;
   }
+  window.addEventListener('greender:leave',()=>{
+    if(!screens.trainer.classList.contains('hidden')&&!gameOver)endGame();
+    if(!screens.winnerGame.classList.contains('hidden')&&!winnerGameOver){stopWinnerTimer();winnerRenderToken++;winnerGameOver=true;winnerPlayersEl.querySelectorAll('button').forEach(b=>b.disabled=true);document.getElementById('btn-winner-next')?.classList.add('hidden');winnerGameOverEl.classList.remove('hidden');winnerFinalScoreEl.textContent='Правильных раздач: '+winnerSolvedCount;window.GreenderTraining?.finish();}
+  });
   resetGame();
   resetWinnerGame();
   showScreen("menu");

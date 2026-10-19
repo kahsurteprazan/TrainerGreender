@@ -14,7 +14,7 @@
  async function api(action,data={}) {
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
   try{
-   const r=await fetch(action.startsWith('learn')?'/api/learning':'/api/app',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data}),signal:controller.signal});
+   const r=await fetch(action.startsWith('training')?'/api/training':action.startsWith('learn')?'/api/learning':'/api/app',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data}),signal:controller.signal});
    let value;try{value=await r.json();}catch{throw apiError('Сервер вернул неполный ответ. Попробуйте проверить данные ещё раз.',r.status,true);}
    if(!r.ok)throw apiError(r.status>=500?'Сервер временно недоступен. Попробуйте позже.':value.error||'Не удалось выполнить запрос',r.status,r.status>=500);
    return value;
@@ -34,9 +34,10 @@
   });
   return loading;
  }
- function showPanel(on){$('platform-panel').classList.toggle('hidden',!on);$('app').classList.toggle('hidden',on);}
+ function showPanel(on){if(on)window.dispatchEvent(new Event('greender:leave'));$('platform-panel').classList.toggle('hidden',!on);$('app').classList.toggle('hidden',on);}
  async function apply(s,openPanel=false){
   current=s;
+  trainingUI.setUser();
   $('platform-bar').classList.remove('hidden');
   $('platform-manage').textContent={owner:'Управление',trainer:'Мои команды',student:'Мой профиль'}[s.role];
   $('platform-identity').textContent=s.user.display_name+' · '+(s.role==='student'&&!s.memberships.length?'Ожидает доступа':{owner:'Владелец',trainer:'Тренер',student:'Ученик'}[s.role]);
@@ -45,6 +46,8 @@
   else showPanel(true);
  }
  let view={screen:'home',tab:'students'};
+ const trainingUI=window.createTrainingUI({api,getCurrent:()=>current,getView:()=>view,renderPanel});
+ window.GreenderTraining=trainingUI;
  const learningUI=window.createLearningUI({api,perform,getCurrent:()=>current,getView:()=>view,setView:v=>{view=v;},renderPanel,showPanel});
  document.addEventListener('click',e=>{if(e.target.closest('#btn-learn')){e.preventDefault();e.stopImmediatePropagation();if(!busy)learningUI.open();}},true);
  const person=id=>current.people.find(p=>String(p.telegram_id)===String(id))||(String(current.user.telegram_id)===String(id)?current.user:null);
@@ -89,7 +92,7 @@
     html+='<div class="facts-row"><div><span>Доступ</span><strong>'+ (p?.blocked?'Аккаунт заблокирован':member.enabled===false?'Приостановлен':'Открыт')+'</strong></div><div><span>В команде с</span><strong>'+date(member.joined_at)+'</strong></div><div><span>Последний вход / сообщение</span><strong>'+date(p?.last_seen_at)+'</strong></div></div>';
     html+='<div class="section-tabs">'+[['learning','Обучение'],['training','Тренажёры'],['access','Доступ']].map(([tab,label])=>button(label,'tab','data-tab="'+tab+'"',view.tab===tab?'primary':'secondary')).join('')+'</div>';
     if(view.tab==='access')html+='<section class="surface"><h3>Управление доступом</h3><p class="subtle">Приостановка оставляет ученика в команде. Удаление из команды сохраняет аккаунт и историю; для возвращения потребуется новая заявка.</p>'+button(member.enabled===false?'Возобновить доступ':'Приостановить доступ','member','data-id="'+member.user_id+'" data-team="'+member.team_id+'" data-operation="'+(member.enabled===false?'resume':'pause')+'"','primary')+button('Убрать из команды','confirm','data-kind="remove" data-id="'+member.user_id+'" data-team="'+member.team_id+'"','danger')+(owner?button(p?.blocked?'Разблокировать аккаунт':'Заблокировать аккаунт','confirm','data-kind="block" data-id="'+member.user_id+'" data-blocked="'+!p?.blocked+'"'):'')+'</section>';
-    else if(view.tab==='training')html+='<div class="preview-notice">Макет статистики. Результаты тренировок пока не записываются.</div><div class="preview-grid">'+placeholder('Сайд-поты','Здесь появятся лучший счёт, сложность и история попыток.')+placeholder('Победитель','Здесь будут правильные ответы, рекорд и результаты режима на время.')+'</div>';
+    else if(view.tab==='training')html+=trainingUI.renderStats(member.user_id);
     else html+=learningUI.renderStudent(member.user_id)+placeholder('Экзамен','Условия допуска и итоговая проверка — следующий этап.');
    }else if(view.screen==='requests')html+='<div class="page-heading"><h2>Заявки на вступление</h2></div>'+requests(s.requests);
    else if(view.screen==='people')html+='<div class="page-heading"><div><h2>Пользователи</h2><p class="subtle">Все зарегистрированные аккаунты. Состав учеников — внутри команд.</p></div>'+go('Пригласить тренера','inviteTrainer','','primary')+'</div><label class="search-label">Найти человека<input id="people-search" type="search" placeholder="Имя, @username или Telegram ID"></label><div class="people-list">'+s.people.map(p=>'<div class="person-row searchable" data-search="'+escape((p.display_name+' '+(p.username||'')+' '+p.telegram_id).toLowerCase())+'"><div class="person-info"><strong>'+escape(p.display_name)+'</strong><span>'+escape(p.username?'@'+p.username:'ID: '+p.telegram_id)+' · '+(String(p.telegram_id)===String(s.user.telegram_id)?'Владелец':s.teams.some(t=>String(t.trainer_id)===String(p.telegram_id))?'Тренер':s.memberships.some(m=>String(m.user_id)===String(p.telegram_id))?'Ученик':'Без команды')+'</span></div>'+(String(p.telegram_id)!==String(s.user.telegram_id)?button(p.blocked?'Разблокировать':'Заблокировать','confirm','data-kind="block" data-id="'+p.telegram_id+'" data-blocked="'+!p.blocked+'"'):'')+'</div>').join('')+'</div>';
@@ -104,7 +107,7 @@
    const m=s.memberships[0],t=s.teams[0];
    html+='<section class="surface"><h2>'+escape(t?.name||'Ожидаем доступ')+'</h2><p class="subtle">'+(s.allowed?'Вы в команде. Тренажёры доступны по кнопке сверху.':m?.enabled===false?'Ваш доступ приостановлен тренером.':t?'Доступ команды или клуба приостановлен. Обратитесь к тренеру.':s.requests.some(r=>r.status==='pending')?'Заявка отправлена. Дождитесь решения тренера.':'Для вступления откройте ссылку-приглашение тренера.')+'</p><p class="subtle">Ваш Telegram ID: '+escape(s.user.telegram_id)+'</p>';
    if(!m){const code=new URLSearchParams(location.search).get('invite')||tg?.initDataUnsafe?.start_param;if(code&&/^[a-f0-9]{48}$/.test(code)&&!s.requests.some(r=>r.status==='pending'))html+=button('Подать заявку тренеру','request','data-code="'+escape(code)+'"','primary');for(const r of s.requests)html+='<p>Заявка: '+escape({pending:'ожидает решения',approved:'ранее одобрена; сейчас вы не в команде',rejected:'отклонена'}[r.status])+'</p>';}
-   html+='</section>';if(m)html+=learningUI.renderProfile()+placeholder('Мои тренировки','Личный рекорд и история результатов появятся после подключения статистики.');
+   html+='</section>';if(m)html+=learningUI.renderProfile()+trainingUI.renderStats(s.user.telegram_id);
   }
   $('platform-panel').innerHTML=html+'</div><dialog id="management-confirm"><h2 id="confirm-title"></h2><p id="confirm-description"></p><div class="row-actions">'+button('Отмена','cancelConfirm')+button('Подтвердить','executeConfirm','','danger')+'</div></dialog>';
  }

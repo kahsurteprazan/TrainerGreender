@@ -13,6 +13,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.route('**/api/learning',r=>r.fulfill({json:r.request().postDataJSON().action==='learnManageGet'?{editor:{sections:[],lessons:[],questions:[]}}:{userId:4,sections:[],progress:[],attempts:[],grants:[]}}));
   await page.route('**/api/trainer',r=>{
    let src=fs.readFileSync(path.join(__dirname,'../server/trainer-source.txt'),'utf8');
+   src='window.GreenderTraining=null;\n'+src;
    src=src.replace('  resetGame();\n  resetWinnerGame();\n  showScreen("menu");\n})();','  window.__qa={startWinnerGame,finishWinnerSuccess,finishWinnerError,nextWinnerDeal,resetWinnerGame,stopWinnerTimer,getCount:()=>winnerSolvedCount,stop:()=>{stopWinnerTimer();clearTimeout(winnerAutoNextId);},startTrainer,checkAnswer,getTask:()=>currentTask,getSolved:()=>solvedCount};\n  resetGame();\n  resetWinnerGame();\n  showScreen("menu");\n})();');
    return r.fulfill({contentType:'application/javascript',body:src});
   });await page.goto('http://127.0.0.1:3000');return {page,errors};

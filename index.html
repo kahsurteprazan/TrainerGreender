@@ -172,6 +172,7 @@
             <span class="mode-detail">спокойный режим</span>
           </button>
         </div>
+      <section id="sidepots-leaderboard" class="leaderboard" aria-label="Общий рейтинг"></section>
       </div>
     </section>
 
@@ -194,7 +195,7 @@
           <div class="arena-table-area"><div class="arena-round"><p id="question-meta" class="meta">Раздача 1</p><span id="arena-score">0 решено</span></div><div id="task-text" class="task arena-task"></div></div>
           <div class="arena-answer-area"><span class="arena-eyebrow">ТВОЁ РЕШЕНИЕ</span><h2 id="question-text" class="question"></h2><p class="arena-answer-hint" id="answer-mode-hint"></p><div id="answer-choices" class="pot-choices"></div><div id="manual-answer" class="hidden"><label class="arena-input-label" for="answer-input">Размер банка<input id="answer-input" type="number" inputmode="numeric" min="0" step="100" placeholder="0" /></label><div id="pot-keypad" class="pot-keypad" aria-label="Цифровая клавиатура"></div></div><p id="feedback" class="feedback hidden" role="status" aria-live="polite"></p><button id="btn-check" class="btn btn-primary" type="button">Проверить</button><button id="btn-next" class="btn btn-primary hidden" type="button">Следующая раздача →</button><div id="pot-review" class="hidden"></div></div>
         </div>
-        <div id="game-over" class="game-over arena-result hidden"><span class="arena-eyebrow">ЗАБЕГ ЗАВЕРШЁН</span><h2>Каждая раздача — опыт</h2><p id="final-score"></p><div id="arena-result-stats"></div><details id="arena-mistakes"><summary>Разобрать ошибки</summary><div id="arena-mistake-list"></div></details><p class="arena-result-note">Это пробная версия нового игрового вида. Результат пока не отправляется в общий рейтинг.</p><div class="arena-result-actions"><button id="btn-replay-run" class="btn btn-primary" type="button">Ещё забег ↗</button><button id="btn-over-menu" class="btn btn-secondary" type="button">В главное меню</button></div></div>
+        <div id="game-over" class="game-over arena-result hidden"><span class="arena-eyebrow">ЗАБЕГ ЗАВЕРШЁН</span><h2>Каждая раздача — опыт</h2><p id="final-score"></p><div id="arena-result-stats"></div><details id="arena-mistakes"><summary>Разобрать ошибки</summary><div id="arena-mistake-list"></div></details><p class="arena-result-note">Результат сохраняется в историю. В общий рейтинг идёт лучший забег на время; сложность и формат ответа учитываются отдельно.</p><div class="arena-result-actions"><button id="btn-replay-run" class="btn btn-primary" type="button">Ещё забег ↗</button><button id="btn-over-menu" class="btn btn-secondary" type="button">В главное меню</button></div></div>
         <div class="arena-sparks" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i></div>
         <button id="btn-trainer-to-menu" class="btn btn-ghost arena-back" type="button">← К тренажёрам</button>
       </div>
@@ -217,6 +218,7 @@
             <span class="mode-detail">спокойный режим</span>
           </button>
         </div>
+      <section id="winner-leaderboard" class="leaderboard" aria-label="Общий рейтинг"></section>
       </div>
     </section>
 
@@ -279,6 +281,7 @@
   <script src="card-deck.js"></script>
   <script src="content-editor.js"></script>
   <script src="learning-ui.js"></script>
+  <script src="training-ui.js"></script>
   <script src="platform.js"></script>
 </body>
 </html>
