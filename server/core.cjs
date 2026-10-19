@@ -31,11 +31,11 @@ async function state(p) {
  const teams=owner?await db('teams?order=created_at.desc'):ownTeams.length?ownTeams:member?await db('teams?id=eq.'+member.team_id):[];
  const clubIds=[...new Set(teams.map(t=>t.club_id))];
  const clubs=owner?await db('clubs?order=created_at.desc'):clubIds.length?await db('clubs?id=in.('+clubIds.join(',')+')'):[];
- const active=teams.some(t=>{const c=clubs.find(c=>c.id===t.club_id);return t.enabled&&c?.enabled&&(!c.access_until||new Date(c.access_until)>new Date());});
+ const active=(owner||ownTeams.length>0||member?.enabled!==false)&&teams.some(t=>{const c=clubs.find(c=>c.id===t.club_id);return t.enabled&&c?.enabled&&(!c.access_until||new Date(c.access_until)>new Date());});
  const role=owner?'owner':ownTeams.length?'trainer':'student';
  const requests=owner?await db('access_requests?status=eq.pending&order=created_at.desc'):ownTeams.length?await db('access_requests?status=eq.pending&team_id=in.('+ownTeams.map(t=>t.id).join(',')+')&order=created_at.desc'):await db('access_requests?user_id=eq.'+p.telegram_id+'&order=created_at.desc&limit=5');
  const memberships=owner?await db('memberships'):ownTeams.length?await db('memberships?team_id=in.('+ownTeams.map(t=>t.id).join(',')+')'):member?[member]:[];
- const userIds=[...new Set([...requests.map(r=>r.user_id),...memberships.map(m=>m.user_id)])];
+ const userIds=[...new Set([...requests.map(r=>r.user_id),...memberships.map(m=>m.user_id),...teams.map(t=>t.trainer_id)])];
  const people=owner?await db('profiles?select=telegram_id,display_name,username,blocked,last_seen_at&order=created_at.desc'):ownTeams.length&&userIds.length?await db('profiles?select=telegram_id,display_name,username,blocked,last_seen_at&telegram_id=in.('+userIds.join(',')+')'):[];
  return {botUsername:config().BOT_USERNAME,user:p,role,allowed:owner||active,teams:teams.map(t=>role==='student'?{id:t.id,name:t.name,club_id:t.club_id}:t),clubs,requests,memberships,people};
 }

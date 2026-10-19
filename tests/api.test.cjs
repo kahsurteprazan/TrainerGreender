@@ -63,3 +63,17 @@ test('trainer invitations require owner and notify the intended account only',as
   failTelegram=true;r=await call({action:'inviteTrainer',trainerId:'43'},{id:'1'});assert.equal(r.statusCode,400);assert.match(r.value.error,/сначала открыть/);
  }finally{global.fetch=original;}
 });
+test('paused membership denies training without removing the profile',async()=>{
+ const c=require('../server/core.cjs'),old=global.fetch;
+ global.fetch=async(url)=>{const path=url.split('/rest/v1/')[1];const value=path.startsWith('teams?trainer_id')?[]:path.startsWith('memberships?')?[{user_id:2,team_id:'team',enabled:false}]:path.startsWith('teams?')?[{id:'team',club_id:'club',enabled:true}]:path.startsWith('clubs?')?[{id:'club',enabled:true}]:[];return{ok:true,text:async()=>JSON.stringify(value)};};
+ try{const state=await c.state({telegram_id:2});assert.equal(state.allowed,false);assert.equal(state.memberships.length,1);assert.equal(state.role,'student');}finally{global.fetch=old;}
+});
+test('member management passes authenticated actor and validates operations',async()=>{
+ const c=require('../server/core.cjs'),old={actor:c.actor,db:c.db,state:c.state},calls=[];
+ c.actor=async()=>({telegram_id:7});c.state=async()=>({role:'trainer'});c.db=async(path,o)=>calls.push({path,body:o.body});
+ try{
+  let r=await call({action:'manageMember',teamId:'11111111-1111-4111-8111-111111111111',userId:'8',operation:'remove',actorId:1});assert.equal(r.statusCode,200);assert.equal(calls[0].body.p_actor,'7');assert.equal(calls[0].body.p_owner,'1');assert.match(r.value.notice,/Аккаунт и история сохранены/);
+  r=await call({action:'manageMember',teamId:'bad',userId:'8',operation:'remove'});assert.equal(r.statusCode,400);
+  r=await call({action:'manageMember',teamId:'11111111-1111-4111-8111-111111111111',userId:'8',operation:'delete-all'});assert.equal(r.statusCode,400);assert.equal(calls.length,1);
+ }finally{Object.assign(c,old);}
+});

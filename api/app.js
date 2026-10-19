@@ -29,8 +29,13 @@ module.exports=async(req,res)=>{
    try{await c.telegram('sendMessage',{chat_id:r.user_id,text:b.approve?'Заявка одобрена! Откройте приложение.':'Заявка отклонена. Свяжитесь с тренером.'});}catch{}
    return c.json(res,200,await c.state(p));
   }
+  if(b.action==='manageMember') {
+   if(!/^[1-9][0-9]{0,15}$/.test(String(b.userId))||!['pause','resume','remove'].includes(b.operation)) throw new Error('Некорректное действие с учеником');
+   await c.db('rpc/manage_member',{method:'POST',body:{p_actor:String(p.telegram_id),p_owner:env.OWNER_TELEGRAM_ID,p_team:c.uuid(b.teamId),p_user:String(b.userId),p_action:b.operation}});
+   return c.json(res,200,{...await c.state(p),notice:{pause:'Доступ приостановлен. Ученик остаётся в команде',resume:'Доступ ученика возобновлён',remove:'Ученик убран из команды. Аккаунт и история сохранены'}[b.operation]});
+  }
   c.assertOwner(p);
-  let notice,warning;
+  let notice,warning,nextView;
   if(b.action==='inviteTrainer') {
    const id=String(b.trainerId||'').trim();
    if(!/^[1-9][0-9]{0,15}$/.test(id)||!Number.isSafeInteger(Number(id))) throw new Error('Укажите настоящий числовой Telegram ID тренера');
@@ -40,11 +45,11 @@ module.exports=async(req,res)=>{
    } catch {throw new Error('Не удалось доставить приглашение. Проверьте ID: этот человек должен сначала открыть @'+env.BOT_USERNAME+' и нажать «Запустить» / отправить /start. Затем повторите отправку');}
    return c.json(res,200,{...await c.state(p),notice:'Приглашение отправлено. Дождитесь, пока человек откроет приложение, затем нажмите «Обновить данные»'});
   }
-  if(b.action==='createClub') {await c.db('clubs',{method:'POST',body:{name:c.text(b.name)}});notice='Клуб создан и сохранён';}
+  if(b.action==='createClub') {const club=(await c.db('clubs',{method:'POST',body:{name:c.text(b.name)}}))[0];nextView={screen:'club',id:club.id};notice='Клуб создан и сохранён';}
   else if(b.action==='createTeam') {
    if(!/^\d+$/.test(String(b.trainerId))) throw new Error('Нужен числовой Telegram ID тренера');
    const team=await c.db('rpc/create_team',{method:'POST',body:{p_owner:env.OWNER_TELEGRAM_ID,p_club:c.uuid(b.clubId),p_name:c.text(b.name),p_trainer:String(b.trainerId)}});
-   notice='Команда «'+team.name+'» создана. Тренер назначен; карточка команды появилась ниже';
+   notice='Команда «'+team.name+'» создана. Тренер назначен';nextView={screen:'team',id:team.id};
    try {await c.telegram('sendMessage',{chat_id:Number(b.trainerId),text:'Вы назначены тренером команды «'+team.name+'». Откройте приложение заново, затем «Моя команда».',reply_markup:{inline_keyboard:[[{text:'Открыть мою команду',web_app:{url:env.APP_URL}}]]}});}catch{warning='Команда сохранена, но уведомление не доставлено. Тренер может открыть ранее полученное приглашение заново';}
   } else if(b.action==='setClub') {
    if(typeof b.enabled!=='boolean') throw new Error('Некорректный статус');
@@ -57,6 +62,6 @@ module.exports=async(req,res)=>{
    if(!/^\d+$/.test(String(b.id))||String(b.id)===env.OWNER_TELEGRAM_ID||typeof b.blocked!=='boolean') throw new Error('Нельзя изменить этого пользователя');
    await c.db('profiles?telegram_id=eq.'+b.id,{method:'PATCH',body:{blocked:b.blocked}});notice=b.blocked?'Пользователь заблокирован':'Пользователь разблокирован';
   } else throw new Error('Неизвестное действие');
-  return c.json(res,200,{...await c.state(p),notice,warning});
+  return c.json(res,200,{...await c.state(p),notice,warning,nextView});
  }catch(e){return c.json(res,e.status||400,{error:e.message||'Ошибка запроса'});}
 };
