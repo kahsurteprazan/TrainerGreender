@@ -933,3 +933,15 @@ input.shake {
 @media(max-width:600px){.content-item{flex-direction:column!important;}.content-item-actions{flex-direction:row;align-items:center;justify-content:space-between;width:100%;}.content-buttons>.btn{flex:1 1 145px;}.content-option{grid-template-columns:1fr;gap:4px;}.content-options{padding:12px;}}
 #platform-panel .btn[data-operation="delete"]{background:#4b2529;color:#ffd5d5;border-color:#a96b72;}
 #platform-panel textarea[name="description"],#platform-panel textarea[name="prompt"]{min-height:108px;}
+
+/* СПЛ: шесть разделов, блоки с тематическими страницами. */
+.course-group {margin:32px 0 38px;}
+.course-group-heading {margin-bottom:16px;}
+.course-group-heading h2 {margin:8px 0 0;font-size:24px;line-height:1.3;}
+.course-group .entity-card {height:100%;}
+.topic-progress {color:#afc9ba;font-size:14px;}
+.topic-video-pending {margin:20px 0 24px;padding:18px 20px;border:1px dashed #3c5c49;border-radius:12px;background:#0b241b;}
+.topic-video-pending p {margin:8px 0 0;}
+.topic-navigation {display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;}
+.lesson-theory h3 {font-size:19px;line-height:1.45;margin:32px 0 14px;}
+@media(max-width:640px){.course-group-heading h2 {font-size:22px;}.topic-navigation .btn {width:100%;}.topic-video-pending {padding:16px;}.course-group {margin:28px 0;}}
