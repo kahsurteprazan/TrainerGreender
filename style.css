@@ -945,3 +945,36 @@ input.shake {
 .topic-navigation {display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;}
 .lesson-theory h3 {font-size:19px;line-height:1.45;margin:32px 0 14px;}
 @media(max-width:640px){.course-group-heading h2 {font-size:22px;}.topic-navigation .btn {width:100%;}.topic-video-pending {padding:16px;}.course-group {margin:28px 0;}}
+
+/* Lesson reading layout: typography only, no course-data or progression changes. */
+#platform-panel:has(.lesson-reader){max-width:900px;padding:12px 16px 40px;}
+#platform-panel:has(.lesson-reader) .management-header {display:none;}
+#platform-panel:has(.lesson-reader) .breadcrumbs {margin:0 0 24px;}
+#platform-panel .lesson-reader {display:block;max-width:720px;margin:0 auto;padding:0;border:0;border-radius:0;background:#0b211a;box-shadow:none;}
+html:has(#platform-panel:not(.hidden) .lesson-reader),body:has(#platform-panel:not(.hidden) .lesson-reader){background:#0b211a;}
+.lesson-reader>.eyebrow {font-size:12px;letter-spacing:1.4px;color:#b5cabc;line-height:1.5;}
+.lesson-reader .topic-progress {margin:10px 0 0;font-size:14px;line-height:1.5;}
+#platform-panel .lesson-reader>h2 {font-size:30px;line-height:1.17;letter-spacing:-.5px;margin:14px 0 24px;}
+.lesson-reader :is(button,a,summary):focus-visible{outline:3px solid #f5d98b;outline-offset:4px;}
+.reader-contents {margin:20px 0 24px;padding:0 0 16px;border-bottom:1px solid #385044;color:#e1c785;}
+.reader-contents summary{cursor:pointer;min-height:44px;align-content:center;font-size:15px;font-weight:600;}
+.reader-contents nav{display:grid;gap:12px;padding:10px 0;}
+.reader-contents a{color:#d5e6dc;font-size:16px;line-height:1.5;text-underline-offset:4px;}
+.lesson-reader .topic-video-pending{margin:0 0 28px;border:0;border-radius:0;border-left:2px solid #658c75;background:transparent;padding:0 0 0 14px;font-size:14px;line-height:1.5;}
+.lesson-reader .topic-video-pending strong{font-weight:500;color:#cadbd0;}
+.lesson-reader .topic-video-pending p{margin:4px 0;color:#b9c7ba;font-size:14px;}
+.lesson-reader .lesson-theory{font-size:18px;line-height:1.7;color:#f0f4ee;overflow-wrap:break-word;text-align:left;}
+
+.lesson-reader .lesson-theory p{margin:0 0 22px;}
+#platform-panel .lesson-reader .lesson-theory h3{font-size:23px;line-height:1.35;letter-spacing:-.25px;margin:36px 0 18px;scroll-margin-top:24px;color:#fffaf0;}
+.lesson-reader .lesson-theory h3:focus{outline:none;}
+.lesson-reader .lesson-theory :is(ul,ol){padding-left:24px;margin:0 0 26px;}
+.lesson-reader .lesson-theory li{padding-left:5px;margin:0 0 16px;}
+.lesson-reader .lesson-theory li::marker{color:#9ccfb0;}
+.lesson-reader .lesson-theory strong{font-weight:700;color:#fffaf0;}
+.lesson-reader>.subtle{font-size:14px;line-height:1.6;margin:28px 0 16px;}
+.lesson-reader .topic-navigation{padding-top:20px;border-top:1px solid #385044;}
+
+
+@media(min-width:760px){#platform-panel:has(.lesson-reader){padding:32px 40px 64px;}#platform-panel .lesson-reader>h2{font-size:38px;}.lesson-reader .lesson-theory{font-size:19px;}}
+@media(max-width:350px){#platform-panel .lesson-reader>h2{font-size:28px;}}

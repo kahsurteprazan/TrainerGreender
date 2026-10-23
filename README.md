@@ -250,3 +250,8 @@ npm run test:editor:ui
 Файлы `server/`, `supabase/`, `scripts/` и `tests/` закрыты от HTTP-раздачи: вопросы с ключами и SQL никогда не должны становиться публичным статическим ресурсом.
 
 Публикация в действующей базе выполнялась поэтапно: сначала неопубликованные темы и вопросы, затем сверка контрольных сумм и отдельная транзакция активации. Скрипт выше предназначен для первоначальной установки на старую структуру; не запускайте его поверх уже подготовленных или опубликованных блоков v3.
+
+
+### Lesson reading layout
+
+All learner lessons use the approved wider reading layout with paragraphs, semantic lists, and a collapsible contents list. There is no text-size control. This is a presentation-only change: course content, lesson IDs, test rules, saved progress, and APIs are unchanged. Run `npm run test:reading:ui` to verify all 51 published lesson texts, 320/390/768/1280px layouts, contents links, escaping, and the completion gate in an isolated in-memory database.

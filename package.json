@@ -18,7 +18,8 @@
     "test:exam:db": "node tests/exam-db.cjs",
     "test:exam:ui": "node tests/exam-ui.cjs",
     "test:course:db": "node tests/spl-course-db.cjs",
-    "test:course:ui": "node tests/spl-course-ui.cjs"
+    "test:course:ui": "node tests/spl-course-ui.cjs",
+    "test:reading:ui": "node tests/reading-ui.cjs"
   },
   "engines": {
     "node": ">=22"
