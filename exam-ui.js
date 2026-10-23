@@ -31,12 +31,14 @@
   function history(d){return '<section class="surface"><h3>Последние попытки</h3>'+(d?.history?.length?'<div class="training-history">'+d.history.map(a=>'<article><strong>'+status[a.status]+'</strong><p>'+esc(reasons[a.reason]||'')+' · Ошибок: '+a.errors+'</p><span class="subtle">'+stamp(a.startedAt)+'</span></article>').join('')+'</div>':'<p class="subtle">Попыток пока нет.</p>')+'</section>';}
   function summary(d,isManager=false){const a=d?.attempt;let html='<section class="surface"><div class="section-top"><h2>'+esc(title(d))+'</h2></div>'+readiness(d);
    if(isManager){
-    if(d?.readiness?.eligible&&d.readiness.configured&&!d.grant&&!live(a)&&a?.status!=='passed')html+=btn(a?.status==='failed'?'Допустить повторно':'Дать допуск','grant','data-user="'+d.userId+'"','primary');
-    if(d?.grant)html+='<p class="subtle">Одна попытка открыта. Ученик должен начать её очно при тренере.</p>';
+    if(d?.readiness?.configured&&!d.grant&&!live(a))html+=btn('Дать доступ к экзамену','grant','data-user="'+d.userId+'"','primary');
+    if(d?.grant)html+='<p class="subtle">Одна попытка открыта. Ученик должен начать её очно при тренере.</p><p class="subtle">Доступ выдал: '+esc(getCurrent().people.find(p=>String(p.telegram_id)===String(d.grant.grantedBy))?.display_name||'ID '+d.grant.grantedBy)+' · '+stamp(d.grant.grantedAt)+'</p>';
+    else if(!live(a)&&a?.status==='passed')html+='<p class="subtle">Предыдущий экзамен сдан. Можно открыть новую попытку; прежний результат сохранится в истории.</p>';
+    if(!d?.readiness?.eligible&&!d?.grant&&!live(a))html+='<p class="subtle">Обучение ещё не завершено. Вы можете вручную открыть одну попытку; учебный прогресс не изменится.</p>';
     if(live(a))html+='<p>Пройдено: '+Math.min(a.index,30)+' / 30 автоматических заданий · Ошибок: '+a.errors+' (допустимо 2)</p>';
    }else{
-    html+='<p class="subtle">Сдайте тесты всех обязательных разделов. После этого тренер вручную откроет одну попытку.</p>';
-    if(d?.grant&&!live(a)&&a?.status!=='passed')html+=btn('Ознакомиться и начать','rules','','primary');
+    html+='<p class="subtle">Доступ к одной попытке вручную выдаёт тренер или владелец. Учебный прогресс и предыдущие результаты сохраняются.</p>';
+    if(d?.grant&&!live(a))html+=btn('Ознакомиться и начать','rules','','primary');
    }
    return html+'</section>';}
   function renderStudent(id){const d=students.get(String(id));return '<section class="surface"><div class="section-top"><h3>Экзамен</h3>'+btn('Открыть экзамен ученика','detail','data-user="'+id+'"')+'</div><p class="subtle">'+(d?esc(title(d)):'Допуск, попытки и устная оценка — в карточке экзамена.')+'</p></section>';}
@@ -53,11 +55,11 @@
   }
   function render(){const v=getView(),isManager=manager(),isLive=live((isManager?students.get(String(v.id)):own)?.attempt);let html='<div class="management-shell exam-shell'+(isLive?' is-live':'')+'"><header class="management-header"><div><span class="eyebrow">GREENDER · ОЧНЫЙ ЭКЗАМЕН</span><h1>'+(v.screen==='exams'?'Допуск и экзамены':v.screen==='examStudent'?'Экзамен ученика':'Экзамен дилера')+'</h1></div>'+btn('← Назад','exit')+'</header><div id="exam-notice" role="status" aria-live="polite">'+esc(notice)+(retry?btn('Проверить состояние','retry'):'')+'</div>';
    if(v.screen==='exams'){
-    html+='<p class="subtle">Допуск только после всех тестов. Экзамен проходит очно перед тренером; одна выдача допуска — одна попытка.</p>'+btn('Обновить список','refresh');
+    html+='<p class="subtle">Доступ можно выдать независимо от прохождения обучения и прошлых результатов. Экзамен проходит очно при тренере; одна выдача доступа — одна попытка.</p>'+btn('Обновить список','refresh');
     if(!rows)return html+'<section class="surface"><p>Загружаем список учеников…</p></section></div>';
-    const ready=rows.filter(d=>d.readiness.eligible&&!d.grant&&!live(d.attempt)&&d.attempt?.status!=='passed'),other=rows.filter(d=>d.grant||d.attempt);
+    const ready=rows.filter(d=>!d.grant&&!live(d.attempt)),other=rows.filter(d=>d.grant||live(d.attempt));
     const row=d=>'<article class="person-row"><div class="person-info"><strong>'+esc(d.displayName)+'</strong><span>'+esc(d.teamName)+' · '+esc(title(d))+'</span></div>'+btn('Открыть','detail','data-user="'+d.userId+'"')+'</article>';
-    return html+'<section class="surface"><h2>Готовы к допуску · '+ready.length+'</h2>'+(ready.length?'<div class="people-list">'+ready.map(row).join('')+'</div>':'<p class="subtle">Новых готовых учеников пока нет. Здесь появятся сдавшие все обязательные тесты.</p>')+'</section><section class="surface"><h2>Допуски и попытки</h2>'+(other.length?'<div class="people-list">'+other.map(row).join('')+'</div>':'<p class="subtle">Выданных допусков и попыток пока нет.</p>')+'</section></div>';
+    return html+'<section class="surface"><h2>Можно выдать доступ · '+ready.length+'</h2>'+(ready.length?'<div class="people-list">'+ready.map(row).join('')+'</div>':'<p class="subtle">Нет учеников без действующего доступа или активной попытки.</p>')+'</section><section class="surface"><h2>Доступ выдан или экзамен идёт</h2>'+(other.length?'<div class="people-list">'+other.map(row).join('')+'</div>':'<p class="subtle">Выданных допусков и попыток пока нет.</p>')+'</section></div>';
    }
    const d=isManager?students.get(String(v.id)):own;
    if(!d)return html+'<section class="surface"><p>Загружаем данные экзамена…</p>'+btn('Обновить','refresh')+'</section></div>';
@@ -76,7 +78,7 @@
    if(action==='refresh'){request(manager()?(getView().screen==='exams'?'examList':'examGet'):'examGet',manager()&&getView().screen!=='exams'?{userId:target()}:{},manager()&&getView().screen!=='exams'?target():undefined);return true;}
    if(action==='exit'){(async()=>{if(!manager()&&!await abortAndExit())return;if(manager()&&getView().screen==='examStudent'){setView({screen:'exams'});draw();request('examList');}else{setView({screen:'home',tab:'students'});renderPanel();showPanel(manager());}})();return true;}
    if(action==='rules'){setView({screen:'examRules'});draw();return true;}
-   if(action==='grant'){grantRequest={userId:d.user,requestId:crypto.randomUUID()};request('examGrant',grantRequest,d.user);return true;}
+   if(action==='grant'){const cached=students.get(String(d.user));if(cached?.grant||live(cached?.attempt))return true;if(cached?.attempt?.status==='passed'&&!confirm('Ученик уже сдал экзамен. Открыть новую попытку? Предыдущий результат сохранится.'))return true;if(!cached?.readiness?.eligible&&cached?.attempt?.status!=='passed'&&!confirm('Обучение ещё не завершено. Открыть одну попытку экзамена без завершения обучения? Учебный прогресс не изменится.'))return true;grantRequest={userId:d.user,requestId:crypto.randomUUID()};request('examGrant',grantRequest,d.user);return true;}
    if(action==='start'){startRequest=startRequest||crypto.randomUUID();request('examStart',{attemptId:startRequest}).then(data=>{if(data){startRequest=null;setView({screen:'examHome'});draw();}});return true;}
    const data=manager()?students.get(String(target())):own,a=data?.attempt;if(!live(a))return true;
    const payload={attemptId:a.id,index:a.index};

@@ -1,0 +1,26 @@
+const assert=require('node:assert/strict'),{randomUUID:uuid}=require('node:crypto'),fixture=require('./exam-fixture.cjs');
+(async()=>{const f=await fixture(),{db,club,ta,tb,command:cmd,grant,start,current}=f;let checks=0;const ok=v=>{assert(v);checks++;},reject=async fn=>{await assert.rejects(fn);checks++;};
+const counts=async()=> (await db.query('select (select count(*) from learning_progress)::int progress,(select count(*) from learning_attempts)::int study_attempts,(select count(*) from exam_attempts)::int attempts,(select count(*) from exam_grants)::int grants')).rows[0];
+const finish=async(status='failed',user=4)=>{const a=await current(user);await db.query("update exam_attempts set status=$1,cursor=33,snapshot=null,current_started_at=null,finished_at=clock_timestamp(),reason=$2 where id=$3",[status,status==='passed'?'completed':'interrupted',a.id]);return a.id;};
+try{
+ const before=await counts();ok(!(await cmd(4,'get')).readiness.eligible);await reject(()=>start());
+ await reject(()=>grant(4,4));await reject(()=>grant(4,3));await reject(()=>cmd(4,'grant',{userId:5,requestId:uuid()}));await reject(()=>grant(6,1));await reject(()=>grant(2,1));await reject(()=>grant(1,1));
+ const requestId=uuid();const first=await cmd(2,'grant',{userId:4,requestId});ok(!!first.grant&&!first.readiness.eligible);ok(first.grant.grantedBy===2);await cmd(2,'grant',{userId:4,requestId});ok((await counts()).grants===1);await reject(()=>grant());
+ let run=await start();ok(run.attempt.status==='active'&&!run.readiness.eligible);await reject(()=>grant());await reject(()=>start());await db.query("update exam_attempts set status='oral',cursor=30 where id=$1",[run.attempt.id]);await reject(()=>grant());await finish();await reject(()=>start());
+ await grant();run=await start();ok(run.attempt.status==='active');const passId=await finish('passed');const stored=JSON.stringify((await db.query('select * from exam_attempts where id=$1',[passId])).rows[0]);await reject(()=>start());
+ const repeat=await grant(4,1);ok(repeat.grant.grantedBy===1);ok(repeat.history.some(a=>a.id===passId&&a.status==='passed'));await reject(()=>grant());run=await start();ok(run.attempt.status==='active');ok(JSON.stringify((await db.query('select * from exam_attempts where id=$1',[passId])).rows[0])===stored);await finish();ok((await cmd(4,'get')).history.length===3);
+ // Real per-profile serialization + unique unused-grant index: simultaneous requests cannot issue two attempts.
+ const race=await Promise.allSettled([grant(),grant()]);ok(race.filter(x=>x.status==='fulfilled').length===1);ok((await db.query('select count(*)::int n from exam_grants where user_id=4 and used_at is null')).rows[0].n===1);
+ await db.query('update memberships set enabled=false where user_id=4');await reject(()=>start());await reject(()=>grant());await db.query('update memberships set enabled=true where user_id=4');
+ await db.query('update profiles set blocked=true where telegram_id=4');await reject(()=>start());await reject(()=>grant());await db.query('update profiles set blocked=false where telegram_id=4');
+ await db.query('update teams set enabled=false where id=$1',[ta.id]);await reject(()=>start());await reject(()=>grant());await db.query('update teams set enabled=true where id=$1',[ta.id]);
+ await db.query('update clubs set enabled=false where id=$1',[club.id]);await reject(()=>start());await reject(()=>grant(4,1));await db.query("update clubs set enabled=true,access_until=now()-interval '1 day' where id=$1",[club.id]);await reject(()=>start());await reject(()=>grant());await db.query('update clubs set access_until=null where id=$1',[club.id]);
+ run=await start();ok(run.attempt.status==='active');await finish();
+ // New team invalidates an old unused grant; only the current trainer can grant.
+ await grant(5,3);await db.query('update memberships set team_id=$1 where user_id=5',[ta.id]);await reject(()=>grant(5,3));await grant(5,2);ok((await db.query('select count(*)::int n from exam_grants where user_id=5 and used_at is null')).rows[0].n===1);await start(5);await finish('failed',5);
+ // Pool configuration remains required; bypass does not expose an empty/broken exam.
+ const oral=(await db.query("select id from learning_sections where slug='disputes'")).rows[0].id;await db.query('update learning_questions set published=false where section_id=$1',[oral]);await reject(()=>grant());await db.query('update learning_questions set published=true where section_id=$1',[oral]);
+ const audit=(await db.query("select actor_id,action,target from audit_log where action='exam.granted' and target='4' order by id")).rows;ok(audit.some(a=>String(a.actor_id)==='1'));ok(audit.some(a=>String(a.actor_id)==='2'));const after=await counts();ok(after.progress===before.progress&&after.study_attempts===before.study_attempts);
+ await db.exec('set role anon');await reject(()=>db.query("select exam_command(4,1,'grant','{}')"));await db.exec('reset role');
+ console.log('Unified exam access:',checks,'checks passed: incomplete study, failed/passed retry, no self-admission, team/owner permissions, locks, duplicate requests, active/oral guard, blocked/expired access, audit, old outcomes and study progress preserved.');
+}finally{await db.close();}})().catch(e=>{console.error(e);process.exit(1)});
