@@ -1,0 +1,45 @@
+const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return{promise,resolve};};
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:require('node:child_process').execFileSync('which',['chromium'],{encoding:'utf8'}).trim(),args:['--no-sandbox']});let checks=0;
+ const base={botUsername:'trainer_test_bot',user:{telegram_id:1,display_name:'Назар'},role:'owner',allowed:true,teams:[],clubs:[{id:'22222222-2222-4222-8222-222222222222',name:'Grinder',enabled:true}],requests:[],memberships:[],people:[{telegram_id:1,display_name:'Назар'}]};
+ async function setup(options={}){
+  const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:options.reducedMotion?'reduce':'no-preference'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  if(options.clock)await page.clock.install();
+  await page.addInitScript(initData=>{window.Telegram={WebApp:{initData,ready(){},expand(){}}};},options.noTelegram?'':'mock');
+  await page.route('https://telegram.org/**',r=>r.abort());
+  await page.route('**/api/app',async r=>{try{await (options.handler?options.handler(r):r.fulfill({json:base}));}catch(e){if(!page.isClosed()&&!/closed|handled|Target/.test(e.message))throw e;}});
+  await page.route('**/api/trainer',options.trainer|| (r=>r.fulfill({contentType:'application/javascript',body:fs.readFileSync(path.join(__dirname,'../server/trainer-source.txt'),'utf8')})));
+  await page.goto('http://127.0.0.1:3000',{waitUntil:'domcontentloaded'});return{page,errors};
+ }
+ async function snapshot(page,label){assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),label+' no horizontal overflow');checks++;fs.mkdirSync('/data/greender-loading-previews',{recursive:true});const content=await page.evaluate(()=>{const html=document.documentElement.cloneNode(true);const live=[...document.querySelectorAll('input')];html.querySelectorAll('input').forEach((el,i)=>{el.setAttribute('value',live[i].value);if(live[i].checked)el.setAttribute('checked','');else el.removeAttribute('checked');});html.querySelectorAll('script,link[rel=stylesheet],#app img').forEach(n=>n.remove());return'<!DOCTYPE html>'+html.outerHTML;});fs.writeFileSync('/data/greender-loading-previews/'+label+'.html',content.replace('</head>','<style>'+fs.readFileSync(path.join(__dirname,'../style.css'),'utf8')+'</style></head>'));await page.screenshot({path:'/data/greender-loading-previews/'+label+'.png',fullPage:true,animations:'disabled'});}
+ try{
+  let auth=deferred(),authCalls=0,mode='auth',hold,seen;
+  const {page,errors}=await setup({handler:async r=>{
+   const b=r.request().postDataJSON();if(b.action==='login'){authCalls++;if(authCalls===1){await auth.promise;return r.fulfill({status:503,json:{error:'temporary'}});}return r.fulfill({json:base});}
+   if(mode==='hold-refresh'){seen.resolve();await hold.promise;return r.fulfill({status:503,json:{error:'temporary'}});}
+   if(mode==='hold-write'&&b.action==='createClub'){seen.resolve();await hold.promise;return r.abort('failed');}
+   return r.fulfill({json:base});
+  }});
+  await page.locator('#login-skeleton:not(.hidden)').waitFor();assert.equal(await page.locator('#platform-login').isDisabled(),true);checks++;await snapshot(page,'login-loading');
+  auth.resolve();await page.waitForFunction(()=>!document.getElementById('platform-login').disabled);assert.match(await page.locator('#platform-message').textContent(),/временно недоступен/);assert.equal(await page.locator('#login-skeleton').isVisible(),false);checks++;await snapshot(page,'login-error');
+  await page.click('#platform-login');await page.locator('#screen-menu').waitFor({state:'visible'});assert.equal(authCalls,2);checks++;
+  mode='normal';await page.click('#platform-manage');await page.locator('.entity-card').waitFor();await page.waitForFunction(()=>!document.getElementById('platform-panel').hasAttribute('aria-busy'));
+  hold=deferred();seen=deferred();mode='hold-refresh';await page.getByRole('button',{name:'Обновить данные',exact:true}).click();await seen.promise;
+  assert.equal(await page.locator('.entity-card').isVisible(),true);assert.equal(await page.locator('#platform-panel').getAttribute('aria-busy'),'true');assert.match(await page.locator('#request-status').textContent(),/Обновляем/);checks++;await snapshot(page,'refresh-loading');await page.setViewportSize({width:1280,height:900});await snapshot(page,'refresh-desktop');await page.setViewportSize({width:390,height:844});
+  hold.resolve();await page.locator('#panel-message.is-error .retry-action').waitFor();assert.equal(await page.locator('#request-status').isVisible(),false);checks++;await snapshot(page,'refresh-error');
+  mode='normal';await page.getByRole('button',{name:'Повторить',exact:true}).click();await page.waitForFunction(()=>!document.getElementById('platform-panel').hasAttribute('aria-busy'));assert.equal(await page.locator('#panel-message.is-error').count(),0);checks++;
+  await page.getByRole('button',{name:'+ Создать клуб',exact:true}).click();await page.locator('input[name=name]').fill('Новый клуб — черновик');await page.getByRole('button',{name:'Обновить данные',exact:true}).click();await page.waitForFunction(()=>!document.getElementById('platform-panel').hasAttribute('aria-busy'));assert.equal(await page.locator('input[name=name]').inputValue(),'Новый клуб — черновик');checks++;
+  let writes=0;await page.route('**/api/app',async(r,next)=>{const b=r.request().postDataJSON();if(b.action==='createClub')writes++;return r.fallback();});
+  hold=deferred();seen=deferred();mode='hold-write';await page.locator('form[data-form=club] button').click();await seen.promise;assert.equal(await page.locator('input[name=name]').isDisabled(),true);assert.match(await page.locator('form button').textContent(),/Создаём клуб/);await page.locator('form button').dispatchEvent('click');assert.equal(writes,1);checks++;await snapshot(page,'form-loading');
+  hold.resolve();await page.locator('.form-feedback.is-error').waitFor();assert.equal(await page.locator('input[name=name]').inputValue(),'Новый клуб — черновик');assert.equal(await page.locator('input[name=name]').isEnabled(),true);assert.match(await page.locator('.form-feedback').textContent(),/могло сохраниться/);checks++;await snapshot(page,'form-network-error');
+  mode='normal';await page.getByRole('button',{name:'Проверить состояние',exact:true}).click();await page.waitForFunction(()=>!document.getElementById('platform-panel').hasAttribute('aria-busy'));assert.equal(writes,1);assert.equal(await page.locator('input[name=name]').inputValue(),'Новый клуб — черновик');assert.match(await page.locator('#panel-message').textContent(),/Проверьте/);checks++;
+  assert.deepEqual(errors,[]);checks++;await page.close();
+  const stalled=deferred();const slow=await setup({clock:true,reducedMotion:true,handler:async r=>{await stalled.promise;try{await r.abort('failed');}catch{}}});await slow.page.locator('#login-skeleton:not(.hidden)').waitFor();assert.equal(await slow.page.locator('.busy-spinner').evaluate(el=>getComputedStyle(el).animationName),'none');checks++;
+  await slow.page.clock.fastForward(8100);assert.match(await slow.page.locator('#platform-message').textContent(),/дольше обычного/);checks++;await snapshot(slow.page,'slow-connection');
+  await slow.page.clock.fastForward(23000);await slow.page.waitForFunction(()=>!document.getElementById('platform-login').disabled);assert.match(await slow.page.locator('#platform-message').textContent(),/не ответил вовремя/);assert.equal(await slow.page.locator('#login-skeleton').isVisible(),false);checks++;stalled.resolve();await slow.page.close();
+  let trainerCalls=0;const assets=await setup({trainer:r=>{trainerCalls++;return trainerCalls===1?r.abort('failed'):r.fulfill({contentType:'application/javascript',body:fs.readFileSync(path.join(__dirname,'../server/trainer-source.txt'),'utf8')});}});await assets.page.waitForFunction(()=>!document.getElementById('platform-login').disabled);assert.match(await assets.page.locator('#platform-message').textContent(),/загрузить тренажёры/);checks++;await assets.page.click('#platform-login');await assets.page.locator('#screen-menu').waitFor({state:'visible'});assert.equal(trainerCalls,2);checks++;assert.deepEqual(assets.errors,[]);await assets.page.close();
+  let illegalCalls=0;const absent=await setup({noTelegram:true,handler:r=>{illegalCalls++;return r.fulfill({json:base});}});await absent.page.waitForFunction(()=>!document.getElementById('platform-login').disabled);assert.equal(illegalCalls,0);assert.match(await absent.page.locator('#platform-message').textContent(),/Откройте приложение/);checks++;await absent.page.close();
+  console.log(`Loading UI: ${checks} checks passed (login skeletons, delayed responses, safe retries, drafts, duplicate prevention, timeout, reduced motion, trainer retry).`);
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exit(1);});

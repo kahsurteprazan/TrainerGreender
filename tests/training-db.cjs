@@ -1,0 +1,31 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),{randomUUID:uuid}=require('node:crypto'),{PGlite}=require('@electric-sql/pglite');
+(async()=>{const db=new PGlite();let checks=0;await db.exec('create role anon;create role authenticated;create role service_role bypassrls;');for(const f of ['001_initial.sql','002_member_management.sql','003_learning.sql','004_content_editor.sql','005_learning_resume.sql','006_training_results.sql'])await db.exec(fs.readFileSync('supabase/'+f,'utf8'));
+ await db.exec("insert into profiles(telegram_id,display_name) values(1,'Owner'),(2,'Trainer A'),(3,'Trainer B'),(4,'Student A'),(5,'Student B'),(6,'No access');");
+ const ca=(await db.query("insert into clubs(name) values('A') returning id")).rows[0].id,cb=(await db.query("insert into clubs(name) values('B') returning id")).rows[0].id;
+ const ta=(await db.query("select * from create_team(1,$1,'A',2)",[ca])).rows[0],tb=(await db.query("select * from create_team(1,$1,'B',3)",[cb])).rows[0];await db.query('insert into memberships(user_id,team_id) values(4,$1),(5,$2)',[ta.id,tb.id]);
+ const command=async(user,action,p={})=>(await db.query('select training_command($1,1,$2,$3::jsonb) x',[user,action,JSON.stringify(p)])).rows[0].x;
+ async function reject(fn){await assert.rejects(fn);checks++;}
+ const options={game:'sidepots',difficulty:'easy',answerFormat:'choice',timed:true};const result={score:3,correct:3,errors:2,attempts:5,durationMs:1000};
+ const start=async(user=4,opt={})=>(await command(user,'start',{id:uuid(),...options,...opt})).run;
+ async function finish(user,run,value={}){await db.query("update training_runs set started_at=clock_timestamp()-interval '10 seconds' where id=$1",[run.id]);return(await command(user,'finish',{id:run.id,...result,...value})).run;}
+ await reject(()=>command(6,'get'));await reject(()=>command(4,'get',{userId:5}));await reject(()=>command(3,'get',{userId:4}));assert.equal((await command(2,'get',{userId:4})).summary.runs,0);checks++;
+ const r=await start();assert.equal((await command(4,'start',{...options,id:r.id})).run.id,r.id);checks++;await reject(()=>command(5,'start',{...options,id:r.id}));await reject(()=>command(4,'start',{...options,id:r.id,difficulty:'hard'}));await reject(()=>command(4,'finish',{id:uuid(),...result}));await reject(()=>command(5,'finish',{id:r.id,...result}));
+ await reject(()=>finish(4,r,{errors:3,attempts:6}));await reject(()=>finish(4,r,{score:4}));await reject(()=>finish(4,r,{durationMs:999999}));await reject(()=>finish(4,r,{attempts:2}));await reject(()=>finish(4,r,{correct:-1}));await reject(()=>finish(4,r,{durationMs:1}));
+ const done=await finish(4,r);assert.equal(done.score,3);checks++;assert.equal((await command(4,'finish',{id:r.id,score:999})).run.score,3);checks++;
+ const own=await command(4,'get');assert.equal(own.summary.runs,1);assert.equal(own.summary.runs7d,1);assert.equal(own.recent.length,1);assert.equal(own.records.length,1);checks++;
+ const r2=await start();await finish(4,r2,{score:2,correct:2,attempts:4});assert.equal((await command(4,'get')).records[0].score,3);checks++;
+ const other=await start(5);await finish(5,other);let board=await command(4,'board',options);assert.equal(board.rows.length,2);assert(board.rows.every(x=>x.place===1));assert.equal(board.me.score,3);assert(!JSON.stringify(board).includes('userId'));checks++;
+ const untimed=await start(4,{timed:false});await finish(4,untimed,{score:9,correct:9,attempts:11,durationMs:2000});assert.equal((await command(4,'board',options)).me.score,3);checks++;
+ const manual=await start(4,{answerFormat:'input'});await finish(4,manual,{score:7,correct:7,attempts:9});assert.equal((await command(4,'board',{...options,answerFormat:'input'})).me.score,7);checks++;assert.equal((await command(4,'board',{...options,difficulty:'hard'})).rows.length,0);checks++;
+ const hard=await start(4,{difficulty:'hard'});await finish(4,hard,{score:0,correct:6,errors:2,attempts:8});checks++;
+ const win=await start(4,{game:'winner',difficulty:'standard',answerFormat:'selection'});await reject(()=>finish(4,win,{score:1,correct:2,errors:1,attempts:3}));await finish(4,win,{score:2,correct:2,errors:1,attempts:3});assert.equal((await command(4,'board',{game:'winner',difficulty:'standard',answerFormat:'selection'})).me.score,2);checks++;
+ const owner=await start(1);await finish(1,owner,{score:8,correct:8,attempts:10});assert.equal((await command(1,'board',options)).rows.length,2);checks++;
+ await db.exec('update memberships set enabled=false where user_id=4');await reject(()=>command(4,'board',options));assert.equal((await command(5,'board',options)).rows.length,1);checks++;assert((await command(2,'get',{userId:4})).summary.runs>0);checks++;await db.exec('update memberships set enabled=true where user_id=4');
+ const blocked=await start();await db.exec('update profiles set blocked=true where telegram_id=4');await reject(()=>finish(4,blocked));assert.equal((await command(5,'board',options)).rows.length,1);checks++;await db.exec('update profiles set blocked=false where telegram_id=4');
+ await db.query('update clubs set access_until=now()-interval \'1 day\' where id=$1',[ca]);await reject(()=>command(4,'start',{...options,id:uuid()}));assert.equal((await command(5,'board',options)).rows.length,1);checks++;await db.query('update clubs set access_until=null where id=$1',[ca]);
+ // More than ten students: own placement must be returned even outside the first ten.
+ for(let i=10;i<22;i++){await db.query('insert into profiles(telegram_id,display_name) values($1,$2)',[i,'Student '+i]);await db.query('insert into memberships(user_id,team_id) values($1,$2)',[i,tb.id]);const t=await start(i);await finish(i,t,{score:20,correct:20,errors:0,attempts:20,durationMs:3000});}
+ board=await command(4,'board',options);assert.equal(board.rows.length,10);assert.equal(board.me.place,13);assert(!board.rows.some(x=>x.isMe));checks++;
+ await db.exec('set role anon');await reject(()=>db.query('select * from training_runs'));await reject(()=>db.query("select training_command(4,1,'get')"));await db.exec('reset role;set role authenticated');await reject(()=>db.query('select * from training_runs'));await db.exec('reset role');
+ await db.close();console.log('Training PostgreSQL: '+checks+' checks passed.');
+})().catch(e=>{console.error(e);process.exit(1)});

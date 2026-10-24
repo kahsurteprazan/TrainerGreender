@@ -1,0 +1,26 @@
+{
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "server/**",
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "src": "/.*",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+      },
+      "continue": true
+    },
+    {
+      "src": "/(server|supabase|tests|scripts)(/.*)?",
+      "status": 404,
+      "dest": "/api/not-found"
+    },
+    {
+      "handle": "filesystem"
+    }
+  ]
+}
