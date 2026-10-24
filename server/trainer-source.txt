@@ -5,8 +5,7 @@
   if (tg) {
     tg.ready();
     tg.expand();
-    if (tg.setHeaderColor) tg.setHeaderColor("#071e17");
-    if (tg.setBackgroundColor) tg.setBackgroundColor("#071e17");
+    // Shell colors and fullscreen are managed safely by spl-ui.js.
   }
 
   const screens = {

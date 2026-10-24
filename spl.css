@@ -22,3 +22,28 @@ body.spl-keyboard-open #pot-keypad{display:none}body.spl-keyboard-open .poker-sc
 #platform-panel .section-tabs .btn{padding:10px 6px!important;font-size:13px!important;white-space:nowrap;overflow-wrap:normal;word-break:normal}.management-shell>.surface+.surface{margin-top:16px}.management-shell:has(>.student-heading)>.management-header>div:first-child{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.management-shell:has(>.student-heading)>.management-header{padding-bottom:16px}
 @media(max-width:700px){.management-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.management-nav:has(button:nth-child(5)){grid-template-columns:repeat(6,minmax(0,1fr))}.management-nav:has(button:nth-child(5)) button{grid-column:span 2}.management-nav:has(button:nth-child(5)) button:nth-child(n+4){grid-column:span 3}.management-shell:has(>.student-heading)>.management-header{padding:0 0 16px}.management-shell>.surface+.surface{margin-top:16px}}
 @media(max-width:380px){.section-tabs:has(button:nth-child(4)){display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.section-tabs:has(button:nth-child(4)) .btn{width:100%!important}}
+/* Telegram Mini App: device safe area + Telegram's overlay controls, applied once.
+   Older clients retain the normal native header; browsers retain env() safe areas. */
+:root{
+ --spl-safe-top:calc(max(env(safe-area-inset-top,0px),var(--tg-safe-area-inset-top,var(--spl-native-safe-top,0px))) + var(--tg-content-safe-area-inset-top,var(--spl-native-content-top,0px)));
+ --spl-safe-bottom:calc(max(env(safe-area-inset-bottom,0px),var(--tg-safe-area-inset-bottom,var(--spl-native-safe-bottom,0px))) + var(--tg-content-safe-area-inset-bottom,var(--spl-native-content-bottom,0px)));
+ --spl-safe-left:calc(max(env(safe-area-inset-left,0px),var(--tg-safe-area-inset-left,var(--spl-native-safe-left,0px))) + var(--tg-content-safe-area-inset-left,var(--spl-native-content-left,0px)));
+ --spl-safe-right:calc(max(env(safe-area-inset-right,0px),var(--tg-safe-area-inset-right,var(--spl-native-safe-right,0px))) + var(--tg-content-safe-area-inset-right,var(--spl-native-content-right,0px)));
+}
+body{padding:var(--spl-safe-top) var(--spl-safe-right) var(--spl-safe-bottom) var(--spl-safe-left);min-height:100dvh}
+/* Compact app header: it sits below Telegram controls, not in a second large band. */
+@media(max-width:700px){
+ #platform-bar{min-height:60px;padding:8px 16px;gap:10px}
+ .spl-brand-logo{width:40px;height:38px}
+ #platform-bar .btn{min-height:44px;font-size:12px;padding:8px 10px}
+ #app:has(#screen-menu:not(.hidden)){padding-top:16px}
+ #screen-menu h1{font-size:27px;line-height:1.16;margin:0}
+ #screen-menu>.card{gap:12px}
+ #screen-menu .eyebrow{font-size:10px;letter-spacing:1.2px}
+ #screen-menu .subtitle{font-size:14px;margin-bottom:4px}
+ #screen-menu .menu-tile{min-height:124px;padding:14px;gap:4px}
+ #screen-menu .menu-tile-icon{width:32px;height:32px;line-height:32px;font-size:22px}
+ #screen-menu .menu-tile-label{font-size:17px;margin-top:4px}
+ #screen-menu .menu-tile-detail{font-size:12px}
+ #screen-menu .menu-footer{margin-top:8px}
+}
