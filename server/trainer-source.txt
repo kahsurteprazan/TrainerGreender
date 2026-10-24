@@ -5,8 +5,8 @@
   if (tg) {
     tg.ready();
     tg.expand();
-    if (tg.setHeaderColor) tg.setHeaderColor("#0f172a");
-    if (tg.setBackgroundColor) tg.setBackgroundColor("#0f172a");
+    if (tg.setHeaderColor) tg.setHeaderColor("#071e17");
+    if (tg.setBackgroundColor) tg.setBackgroundColor("#071e17");
   }
 
   const screens = {
@@ -169,10 +169,10 @@
     const hearts = livesEl.querySelectorAll(".heart");
     hearts.forEach((heart, i) => {
       if (i < lives) {
-        heart.textContent = "❤️";
+        heart.textContent = "♥";
         heart.classList.remove("lost");
       } else {
-        heart.textContent = "💔";
+        heart.textContent = "♥";
         heart.classList.add("lost");
       }
     });
@@ -241,10 +241,10 @@
     const hearts = winnerLivesEl.querySelectorAll(".heart");
     hearts.forEach((heart, i) => {
       if (i < winnerLives) {
-        heart.textContent = "❤️";
+        heart.textContent = "♥";
         heart.classList.remove("lost");
       } else {
-        heart.textContent = "💔";
+        heart.textContent = "♥";
         heart.classList.add("lost");
       }
     });
@@ -525,6 +525,7 @@
   }
 
   function setPlayingUi() {
+    document.querySelector(".arena-card").dataset.answerState="editing";
     answered = false;
     gameOver = false;
     answerInput.value = "";
@@ -549,8 +550,9 @@
   }
 
   function updateQuestionPrompt() {
+    document.querySelector(".arena-card").dataset.answerState="editing";
     const question = currentTask.questions[currentPotIndex];
-    questionTextEl.textContent = question.prompt.replace(/^Введите размер /,"Каков размер ").replace(/:$/,"?");
+    questionTextEl.textContent = currentPotIndex===0?"Сколько в основном банке?":"Сколько в сайд-поте "+currentPotIndex+"?";
     questionMetaEl.textContent=`Раздача ${questionNumber} · банк ${currentPotIndex+1}/${currentTask.questions.length}`;
     document.getElementById("arena-score").textContent=`${solvedCount} решено`;
     document.getElementById("answer-mode-hint").textContent=answerMode==="choice"?"Выбери точную сумму. Стопки фишек условные — считай по подписям.":"Рассчитай сумму самостоятельно. Можно использовать клавиатуру ниже.";
@@ -579,8 +581,8 @@
   }
 
   function haptic(kind){try{tg?.HapticFeedback?.notificationOccurred(kind);}catch{}}
-  function revealPots(){const panel=document.getElementById("pot-review");panel.innerHTML=tableUI.review(currentTask.bets);panel.classList.remove("hidden");taskTextEl.classList.add("pots-revealed");}
-  function lockAnswers(){answerInput.disabled=true;btnCheck.classList.add("hidden");document.querySelectorAll(".pot-choice,#pot-keypad button").forEach(b=>b.disabled=true);}
+  function revealPots(){const panel=document.getElementById("pot-review");panel.innerHTML='<details class="spl-pot-details"><summary>Разбор расчёта</summary>'+tableUI.review(currentTask.bets)+'</details>';panel.classList.remove("hidden");taskTextEl.classList.add("pots-revealed");}
+  function lockAnswers(){document.querySelector(".arena-card").dataset.answerState="answered";answerInput.disabled=true;btnCheck.classList.add("hidden");document.querySelectorAll(".pot-choice,#pot-keypad button").forEach(b=>b.disabled=true);}
   function endGame() {
     if(gameOver)return;gameOver=true;stopPending();answered=true;lockAnswers();btnNext.classList.add("hidden");
     document.querySelector(".arena-card").classList.add("arena-ended");gameOverEl.classList.remove("hidden");
@@ -597,7 +599,7 @@
     answered=true;stopTimer();lockAnswers();runErrors++;runAttempts++;lives--;renderLives();
     window.GreenderTraining?.track({score:solvedCount,correct:runBanks,errors:runErrors,attempts:runAttempts});
     const q=currentTask.questions[currentPotIndex];runMistakes.push({round:questionNumber,bets:currentTask.bets.slice(),prompt:q.prompt,answer:value,expected:q.answer,timeout});
-    feedbackEl.classList.remove("hidden","ok");feedbackEl.classList.add("bad");feedbackEl.textContent=(timeout?'Время вышло. ':'Не совсем. ')+'Правильный ответ: '+tableUI.fmt(q.answer)+'. Ниже — разбор.';
+    feedbackEl.classList.remove("hidden","ok");feedbackEl.classList.add("bad");feedbackEl.textContent=(timeout?'Время вышло. ':'Не совсем. ')+'Правильный ответ: '+tableUI.fmt(q.answer)+'. Откройте разбор расчёта.';
     document.querySelectorAll('.pot-choice').forEach(b=>{if(Number(b.dataset.amount)===q.answer)b.classList.add('correct');else if(Number(b.dataset.amount)===value)b.classList.add('wrong');});
     haptic('error');revealPots();if(lives<=0)endGame();else btnNext.classList.remove("hidden");
   }
@@ -1569,9 +1571,9 @@
   }
 
   function showWinnerCombination(){
-    document.getElementById('winner-combination-review')?.remove();const panel=document.createElement('div');panel.id='winner-combination-review';panel.className='winner-combination-review';
+    document.getElementById('winner-combination-review')?.remove();const panel=document.createElement('div');panel.id='winner-combination-review';panel.className='winner-combination-review';const details=document.createElement('details');details.className='spl-winner-review';const summary=document.createElement('summary');summary.textContent='Победная комбинация';details.append(summary);panel.append(details);
     const names=['Старшая карта','Пара','Две пары','Тройка','Стрит','Флеш','Фулл-хаус','Каре','Стрит-флеш'];
-    winnerDeal.winners.forEach(i=>{const p=winnerDeal.players[i],row=document.createElement('div');const label=document.createElement('strong');label.textContent=p.name+' · '+names[p.hand.score[0]];row.append(label);const cards=document.createElement('div');cards.className='winner-best-five';p.hand.cards.forEach(c=>cards.append(makeWinnerCardImage(c)));row.append(cards);panel.append(row);});winnerFeedbackEl.after(panel);
+    winnerDeal.winners.forEach(i=>{const p=winnerDeal.players[i],row=document.createElement('div');const label=document.createElement('strong');label.textContent=p.name+' · '+names[p.hand.score[0]];row.append(label);const cards=document.createElement('div');cards.className='winner-best-five';p.hand.cards.forEach(c=>cards.append(makeWinnerCardImage(c)));row.append(cards);details.append(row);});winnerFeedbackEl.after(panel);
   }
 
   function scheduleWinnerNext() {

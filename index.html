@@ -2,15 +2,19 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Greender Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <title>СПЛ — обучение дилеров</title>
+  <meta name="description" content="Сибирская Покерная Лига: обучение дилеров, покерные тренажёры и очная аттестация." />
+  <meta name="theme-color" content="#071e17" />
+  <meta name="apple-mobile-web-app-title" content="СПЛ" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="arena.css" />
+  <link rel="stylesheet" href="spl.css" />
 </head>
 <body>
   <div id="platform-bar" class="hidden">
-    <span id="platform-identity"></span>
+    <img class="spl-brand-logo" src="assets/spl-logo.svg" alt="СПЛ — Сибирская Покерная Лига" width="55" height="51" /><span id="platform-identity"></span>
     <button id="platform-manage" class="btn btn-secondary" type="button">Моя команда</button>
   </div>
   <div id="platform-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -18,7 +22,7 @@
   <div id="app">
     <section id="screen-login" class="screen">
       <div class="card">
-        <h1>Greender Trainer</h1>
+        <img class="spl-login-logo" src="assets/spl-logo.svg" alt="Сибирская Покерная Лига" width="182" height="169" /><p class="eyebrow">Платформа обучения</p><h1>Мастерство дилера<br>начинается здесь.</h1>
         <p class="subtitle">Вход через Telegram. Доступ к команде подтверждает тренер.</p>
         <p id="platform-message" class="subtitle" role="status">Проверяем вход…</p>
         <div id="login-skeleton" class="login-skeleton hidden" aria-hidden="true">
@@ -32,7 +36,7 @@
 
     <section id="screen-menu" class="screen hidden">
       <div class="card">
-        <h1>Главное меню</h1>
+        <p class="eyebrow">Сибирская Покерная Лига</p><h1>За покерный стол —<br>с уверенностью.</h1><p class="subtitle">Теория, практика и очный экзамен.</p>
         <div class="main-menu-grid">
           <button id="btn-trainer" class="btn btn-primary menu-tile" type="button">
             <span class="menu-tile-icon">♣</span>
@@ -56,8 +60,8 @@
           </button>
         </div>
         <div class="menu-footer">
-          <button id="btn-ideas" class="btn btn-secondary" type="button">💡 Идеи и предложения</button>
-          <button id="btn-support" class="btn btn-secondary" type="button">💬 Поддержка</button>
+          <button id="btn-ideas" class="btn btn-secondary" type="button">Идеи и предложения</button>
+          <button id="btn-support" class="btn btn-secondary" type="button">Поддержка ↗</button>
         </div>
       </div>
     </section>
@@ -158,8 +162,8 @@
     <section id="screen-trainer-menu" class="screen hidden">
       <div class="card">
         <button id="btn-trainer-back" class="btn btn-ghost" type="button">Назад</button>
-        <h1>Режим тренажера</h1>
-        <p class="subtitle">Собирай банки за покерным столом.</p><fieldset class="answer-format"><legend>Как отвечать</legend><label><input type="radio" name="answer-format" value="choice" checked> 4 варианта</label><label><input type="radio" name="answer-format" value="input"> Свой расчёт</label></fieldset>
+        <h1>Сайд-поты</h1>
+        <p class="subtitle">Рассчитайте основной и побочные банки.</p><fieldset class="answer-format"><legend>Как отвечать</legend><label><input type="radio" name="answer-format" value="choice" checked> 4 варианта</label><label><input type="radio" name="answer-format" value="input"> Свой расчёт</label></fieldset>
         <div class="mode-grid">
           <button id="btn-mode-timed" class="btn btn-primary btn-mode" type="button">
             <span class="mode-icon">15</span>
@@ -189,13 +193,13 @@
 
     <section id="screen-trainer" class="screen hidden">
       <div class="card trainer-card arena-card">
-        <header class="arena-header"><div><span class="arena-eyebrow">GREENDER · TABLE LAB</span><h1>Сайд-поты</h1><p id="arena-mode" class="arena-mode"></p></div><div class="arena-header-right"><div id="lives" class="lives" aria-label="Жизни"><span class="heart">❤️</span><span class="heart">❤️</span></div><button id="btn-finish-run" class="btn btn-ghost" type="button">Завершить</button></div></header>
+        <header class="arena-header"><div><span class="arena-eyebrow">СПЛ · ПРАКТИКА</span><h1>Сайд-поты</h1><p id="arena-mode" class="arena-mode"></p></div><div class="arena-header-right"><div id="lives" class="lives" aria-label="Жизни"><span class="heart">♥</span><span class="heart">♥</span></div><button id="btn-finish-run" class="btn btn-ghost" type="button">Завершить</button></div></header>
         <div id="timer" class="timer hidden"><div class="timer-track"><div class="timer-bar"></div></div><span class="timer-value">15</span></div>
         <div class="arena-grid">
           <div class="arena-table-area"><div class="arena-round"><p id="question-meta" class="meta">Раздача 1</p><span id="arena-score">0 решено</span></div><div id="task-text" class="task arena-task"></div></div>
-          <div class="arena-answer-area"><span class="arena-eyebrow">ТВОЁ РЕШЕНИЕ</span><h2 id="question-text" class="question"></h2><p class="arena-answer-hint" id="answer-mode-hint"></p><div id="answer-choices" class="pot-choices"></div><div id="manual-answer" class="hidden"><label class="arena-input-label" for="answer-input">Размер банка<input id="answer-input" type="number" inputmode="numeric" min="0" step="100" placeholder="0" /></label><div id="pot-keypad" class="pot-keypad" aria-label="Цифровая клавиатура"></div></div><p id="feedback" class="feedback hidden" role="status" aria-live="polite"></p><button id="btn-check" class="btn btn-primary" type="button">Проверить</button><button id="btn-next" class="btn btn-primary hidden" type="button">Следующая раздача →</button><div id="pot-review" class="hidden"></div></div>
+          <div class="arena-answer-area"><span class="arena-eyebrow">ТВОЁ РЕШЕНИЕ</span><h2 id="question-text" class="question"></h2><p class="arena-answer-hint" id="answer-mode-hint"></p><div class="spl-answer-slot"><div id="answer-choices" class="pot-choices"></div><div id="manual-answer" class="hidden"><label class="arena-input-label" for="answer-input">Размер банка<input id="answer-input" type="number" inputmode="numeric" min="0" step="100" placeholder="0" /></label><div id="pot-keypad" class="pot-keypad" aria-label="Цифровая клавиатура"></div></div><p id="feedback" class="feedback hidden" role="status" aria-live="polite"></p><button id="btn-check" class="btn btn-primary" type="button">Проверить</button><button id="btn-next" class="btn btn-primary hidden" type="button">Следующая раздача →</button><div id="pot-review" class="hidden"></div></div></div>
         </div>
-        <div id="game-over" class="game-over arena-result hidden"><span class="arena-eyebrow">ЗАБЕГ ЗАВЕРШЁН</span><h2>Каждая раздача — опыт</h2><p id="final-score"></p><div id="arena-result-stats"></div><details id="arena-mistakes"><summary>Разобрать ошибки</summary><div id="arena-mistake-list"></div></details><p class="arena-result-note">Результат сохраняется в историю. В общий рейтинг идёт лучший забег на время; сложность и формат ответа учитываются отдельно.</p><div class="arena-result-actions"><button id="btn-replay-run" class="btn btn-primary" type="button">Ещё забег ↗</button><button id="btn-over-menu" class="btn btn-secondary" type="button">В главное меню</button></div></div>
+        <div id="game-over" class="game-over arena-result hidden"><img class="spl-result-logo" src="assets/spl-logo.svg" alt="СПЛ" width="58" height="54" /><span class="arena-eyebrow">ЗАБЕГ ЗАВЕРШЁН</span><h2>Каждая раздача — опыт</h2><p id="final-score"></p><div id="arena-result-stats"></div><details id="arena-mistakes"><summary>Разобрать ошибки</summary><div id="arena-mistake-list"></div></details><p class="arena-result-note">Результат сохраняется в историю. В общий рейтинг идёт лучший забег на время; сложность и формат ответа учитываются отдельно.</p><div class="arena-result-actions"><button id="btn-replay-run" class="btn btn-primary" type="button">Ещё забег ↗</button><button id="btn-over-menu" class="btn btn-secondary" type="button">В главное меню</button></div></div>
         <div class="arena-sparks" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i></div>
         <button id="btn-trainer-to-menu" class="btn btn-ghost arena-back" type="button">← К тренажёрам</button>
       </div>
@@ -223,11 +227,11 @@
     </section>
 
     <section id="screen-winner-game" class="screen hidden">
-      <div class="card winner-card">
+      <div class="card winner-card spl-winner-card">
         <div class="trainer-top">
           <button id="btn-winner-game-back" class="btn btn-ghost" type="button">Назад</button>
-          <div id="winner-lives" class="lives" aria-label="Жизни">
-            <span class="heart">❤️</span><span class="heart">❤️</span>
+          <h1 class="spl-winner-title">Победитель</h1><div id="winner-lives" class="lives" aria-label="Жизни">
+            <span class="heart">♥</span><span class="heart">♥</span>
           </div>
         </div>
         <div id="winner-timer" class="timer winner-timer hidden">
@@ -237,20 +241,20 @@
           <span class="timer-value">5</span>
         </div>
         <p id="winner-round" class="meta">Раздача 1</p>
-        <div>
+        <div class="spl-winner-table"><div class="spl-winner-felt" aria-hidden="true"></div><div class="spl-board-wrap">
           <p class="winner-section-title">Общие карты</p>
           <div id="winner-board" class="winner-board"></div>
         </div>
-        <div>
+        <div class="spl-players-wrap">
           <p class="winner-section-title">Игроки</p>
           <div id="winner-players" class="winner-players"></div>
         </div>
-        <p id="winner-feedback" class="feedback hidden"></p>
+        </div><div class="spl-winner-answer"><p class="spl-winner-prompt">Кто выиграл раздачу?</p><p class="spl-winner-hint">Нажмите на всех победителей. Выбор сразу проверяется.</p><p id="winner-feedback" class="feedback hidden"></p>
         <div id="winner-game-over" class="game-over hidden">
           <h2>Игра окончена</h2>
           <p id="winner-final-score"></p>
           <button id="btn-winner-over-menu" class="btn btn-primary" type="button">В меню</button>
-        </div>
+        </div></div>
       </div>
     </section>
 
@@ -283,6 +287,7 @@
   <script src="learning-ui.js"></script>
   <script src="training-ui.js"></script>
   <script src="exam-ui.js"></script>
+  <script src="spl-ui.js"></script>
   <script src="platform.js"></script>
 </body>
 </html>

@@ -20,7 +20,7 @@ module.exports=async(req,res)=>{
   // chat_id makes this a per-user override, not the default menu for other users.
   await c.telegram('setChatMenuButton',{chat_id:Number(env.OWNER_TELEGRAM_ID),menu_button:{type:'web_app',text:'Тест приложения',web_app:{url:launchUrl}}});
   let messageSent=true;
-  try{await c.telegram('sendMessage',{chat_id:Number(env.OWNER_TELEGRAM_ID),text:'Тестовая версия Greender Trainer готова. Откройте приложение кнопкой ниже. Вход должен произойти через Telegram без пароля. Затем нажмите «Моя команда», чтобы открыть панель владельца. Это тестовая версия; основной сайт не изменён.',reply_markup:{inline_keyboard:[[{text:'Открыть тестовую версию',web_app:{url:launchUrl}}]]}});}catch{messageSent=false;}
+  try{await c.telegram('sendMessage',{chat_id:Number(env.OWNER_TELEGRAM_ID),text:'Тестовая версия СПЛ готова. Откройте приложение кнопкой ниже. Вход должен произойти через Telegram без пароля. Затем нажмите «Моя команда», чтобы открыть панель владельца. Это тестовая версия; основной сайт не изменён.',reply_markup:{inline_keyboard:[[{text:'Открыть тестовую версию',web_app:{url:launchUrl}}]]}});}catch{messageSent=false;}
   return c.json(res,200,{ok:true,ownerOnly:true,menuUpdated:true,messageSent});
  }catch{return c.json(res,502,{ok:false,error:'Telegram setup failed. Owner may need to send /start to the bot first.'});}
 };

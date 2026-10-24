@@ -26,7 +26,7 @@ module.exports=async(req,res)=>{
     try {const r=await c.db('rpc/request_access',{method:'POST',body:{p_user:String(p.telegram_id),p_code:match[1]}});message='Заявка отправлена тренеру. После одобрения откройте приложение.';try{await c.notifyRequest(r);}catch{message+=' Тренер увидит заявку в панели.';}}
     catch(e){message=e.message;}
    }
-   await c.telegram('sendMessage',{chat_id:m.chat.id,text:message,reply_markup:{inline_keyboard:[[{text:'Открыть Greender Trainer',web_app:{url:env.APP_URL}}]]}});
+   await c.telegram('sendMessage',{chat_id:m.chat.id,text:message,reply_markup:{inline_keyboard:[[{text:'Открыть СПЛ',web_app:{url:env.APP_URL}}]]}});
   }
   return c.json(res,200,{ok:true});
  }catch {return c.json(res,500,{error:'Не удалось обработать обновление'});}

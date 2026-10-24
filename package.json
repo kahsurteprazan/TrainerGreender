@@ -20,7 +20,8 @@
     "test:course:db": "node tests/spl-course-db.cjs",
     "test:course:ui": "node tests/spl-course-ui.cjs",
     "test:reading:ui": "node tests/reading-ui.cjs",
-    "test:exam:access": "node tests/unified-exam-access.cjs"
+    "test:exam:access": "node tests/unified-exam-access.cjs",
+    "test:redesign": "node tests/spl-redesign.cjs && node tests/spl-roles.cjs"
   },
   "engines": {
     "node": ">=22"

@@ -41,7 +41,7 @@ module.exports=async(req,res)=>{
    if(!/^[1-9][0-9]{0,15}$/.test(id)||!Number.isSafeInteger(Number(id))) throw new Error('Укажите настоящий числовой Telegram ID тренера');
    if(id===env.OWNER_TELEGRAM_ID) throw new Error('Вы уже владелец. Пригласите другой Telegram-аккаунт');
    try {
-    await c.telegram('sendMessage',{chat_id:Number(id),text:'Вас приглашают зарегистрироваться в Greender Trainer. Откройте приложение кнопкой ниже. После регистрации владелец сможет назначить вас тренером. Само приглашение не выдаёт доступ и права.',reply_markup:{inline_keyboard:[[{text:'Зарегистрироваться',web_app:{url:env.APP_URL}}]]}});
+    await c.telegram('sendMessage',{chat_id:Number(id),text:'Вас приглашают зарегистрироваться в СПЛ. Откройте приложение кнопкой ниже. После регистрации владелец сможет назначить вас тренером. Само приглашение не выдаёт доступ и права.',reply_markup:{inline_keyboard:[[{text:'Зарегистрироваться',web_app:{url:env.APP_URL}}]]}});
    } catch {throw new Error('Не удалось доставить приглашение. Проверьте ID: этот человек должен сначала открыть @'+env.BOT_USERNAME+' и нажать «Запустить» / отправить /start. Затем повторите отправку');}
    return c.json(res,200,{...await c.state(p),notice:'Приглашение отправлено. Дождитесь, пока человек откроет приложение, затем нажмите «Обновить данные»'});
   }
